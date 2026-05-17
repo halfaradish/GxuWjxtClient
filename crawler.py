@@ -187,11 +187,8 @@ def download_one(client: WjxtClient, file_info: dict, output_dir: str,
         return None
 
     attachments = detail.get("download_urls", [])
-    if not attachments:
-        stats.inc_no_attachment()
-        return None
 
-    # 确认有附件后才创建目录
+    # 构建目录路径
     dept = safe_filename(file_info.get("department") or "广西大学", max_len=40)
     date_str = file_info.get("date", "0000-00-00")
     title = safe_filename(file_info.get("title", "无标题"), max_len=80)
@@ -201,7 +198,8 @@ def download_one(client: WjxtClient, file_info: dict, output_dir: str,
     file_dir = os.path.join(dept_dir, file_dir_name)
 
     if dry_run:
-        print(f"  [DRY-RUN] {dept}/{file_dir_name}/ ({len(attachments)} 个附件)")
+        tag = f"{len(attachments)} 个附件" if attachments else "仅 HTML"
+        print(f"  [DRY-RUN] {dept}/{file_dir_name}/ ({tag})")
         for att in attachments:
             print(f"    -> {att['filename']}")
         history.add(fhash)
@@ -234,14 +232,10 @@ def download_one(client: WjxtClient, file_info: dict, output_dir: str,
         else:
             print(f"    [{saved_count + 1}/{len(attachments)}] [FAIL] {att_filename}")
 
-    if saved_count > 0:
-        history.add(fhash)
-        stats.inc_downloaded()
-        save_history(history_path, history)
-        return file_dir
-    else:
-        stats.inc_failed()
-        return None
+    history.add(fhash)
+    stats.inc_downloaded()
+    save_history(history_path, history)
+    return file_dir
 
 
 def download_batch(client: WjxtClient, files: list[dict], output_dir: str,
