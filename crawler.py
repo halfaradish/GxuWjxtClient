@@ -228,9 +228,8 @@ def download_one(client: WjxtClient, file_info: dict, output_dir: str,
 
         if _download_raw(client, att["url"], att_path, stats):
             saved_count += 1
-            print(f"    [{saved_count}/{len(attachments)}] {att_filename}")
         else:
-            print(f"    [{saved_count + 1}/{len(attachments)}] [FAIL] {att_filename}")
+            print(f"\n    [FAIL] {att_filename}")
 
     history.add(fhash)
     stats.inc_downloaded()
@@ -238,35 +237,51 @@ def download_one(client: WjxtClient, file_info: dict, output_dir: str,
     return file_dir
 
 
+def _progress_bar(done: int, total: int, width: int = 20) -> str:
+    """生成进度条字符串 [====>     ] 12/50  24%"""
+    if total <= 0:
+        return ""
+    filled = int(width * done / total)
+    bar = "█" * filled + "░" * (width - filled)
+    pct = done / total * 100
+    return f"  [{bar}] {done}/{total}  {pct:.0f}%"
+
+
 def download_batch(client: WjxtClient, files: list[dict], output_dir: str,
                    history: set, stats: CrawlStats, history_path: str,
                    workers: int = 1, dry_run: bool = False):
     """批量下载文件列表"""
+    total = len(files)
+    if total == 0:
+        return
+
     if workers <= 1:
         for i, f in enumerate(files):
-            pct = (i + 1) / len(files) * 100
-            print(f"  [{i + 1}/{len(files)} {pct:.0f}%] {f['title'][:60]}")
             download_one(client, f, output_dir, history, stats, history_path, dry_run)
+            print(f"\r{_progress_bar(i + 1, total)}", end="", flush=True)
+        print()  # 换行
     else:
-        # 并发下载（注意：共用 session 不是线程安全的，为每个任务创建连接）
-        # 实际上 requests.Session 不是线程安全的，这里用 workers 时每个线程串行使用 client
-        # 用锁保护 client 的调用
         client_lock = threading.Lock()
+        done_count = [0]  # mutable counter for thread-safe increments
+        count_lock = threading.Lock()
 
         def _download_safe(finfo):
+            result = None
             with client_lock:
-                return download_one(client, finfo, output_dir, history, stats, history_path, dry_run)
+                result = download_one(client, finfo, output_dir, history, stats, history_path, dry_run)
+            with count_lock:
+                done_count[0] += 1
+                print(f"\r{_progress_bar(done_count[0], total)}", end="", flush=True)
+            return result
 
         with ThreadPoolExecutor(max_workers=workers) as executor:
-            futures = {executor.submit(_download_safe, f): f for f in files}
-            for i, future in enumerate(as_completed(futures)):
-                f = futures[future]
-                pct = (i + 1) / len(files) * 100
+            futures = [executor.submit(_download_safe, f) for f in files]
+            for future in as_completed(futures):
                 try:
                     future.result()
-                    print(f"  [{i + 1}/{len(files)} {pct:.0f}%] OK  {f['title'][:60]}")
                 except Exception as e:
-                    print(f"  [{i + 1}/{len(files)} {pct:.0f}%] ERR {f['title'][:60]} -> {e}")
+                    print(f"\n  [ERR] {e}")
+        print()  # 换行
 
 
 # ---------------------------------------------------------------------------
@@ -455,7 +470,7 @@ def main():
             print(f"共 {len(depts)} 个部门\n")
             for i, d in enumerate(depts):
                 print(f"{'=' * 50}")
-                print(f"部门 [{i + 1}/{len(depts)}]")
+                print(f"部门 [{i + 1}/{len(depts)}]")           
                 try:
                     crawl_department(
                         client, d["id"], d["tn_decoded"], output_dir,
