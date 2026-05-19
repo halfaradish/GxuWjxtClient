@@ -10,7 +10,7 @@ import httpx
 
 from .config import WjxtConfig
 from .exceptions import AuthError, NetworkError
-from .types import FileInfo, FileDetail, DepartmentInfo, PhoneContact, PaginationInfo
+from .types import FileInfo, FileDetail, DepartmentInfo, PhoneContact, PaginationInfo, SearchParams, SearchResult
 from . import _base
 
 
@@ -326,19 +326,111 @@ class AsyncWjxtClient:
     # 5. 搜索
     # ------------------------------------------------------------------
 
-    async def search_files(self, keyword: str = "",
-                           search_type: str = "title") -> str:
-        await self._ensure_logged_in()
+    async def _get_search_viewstate(self) -> dict:
+        """获取搜索表单所需的 VIEWSTATE"""
         await self._get(f"{self.wjxt_ui}/default.aspx")
-        await self._get(f"{self.wjxt_ui}/WebUI.aspx?id=2")
-        return (await self._get(
-            f"{self.wjxt_ui}/search.aspx",
-            headers={"Referer": f"{self.wjxt_ui}/WebUI.aspx?id=2"},
-        )).text
+        r = await self._get(
+            f"{self.wjxt_ui}/WebUI.aspx?id=2",
+            headers={"Referer": f"{self.wjxt_ui}/default.aspx"},
+        )
+        r.encoding = "gbk"
+        fields = {}
+        fields.update(_base.extract_viewstate(r.text))
+        fields.update(_base.extract_hidden_fields(r.text))
+        return fields
 
-    async def file_search(self, keyword: str = "") -> str:
+    async def _search_post(self, url: str, fields: dict) -> str:
+        """POST 搜索请求（GB2312 编码）"""
+        body = _base.encode_post_data_gb2312(fields)
+        resp = await self._http.post(
+            url,
+            content=body,
+            headers={
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Referer": f"{self.wjxt_ui}/WebUI.aspx?id=2",
+            },
+        )
+        resp.encoding = "gbk"
+        return resp.text
+
+    async def search(self, params: SearchParams = None, *,
+                     page: int = 1, **kwargs) -> SearchResult:
+        """执行文件搜索并返回结构化结果"""
+        if params is None:
+            params = SearchParams(**kwargs)
+        elif kwargs:
+            for k, v in kwargs.items():
+                if hasattr(params, k) and v is not None:
+                    setattr(params, k, v)
+
         await self._ensure_logged_in()
-        return (await self._get(f"{self.wjxt_ui}/filesearch.aspx")).text
+
+        fields = await self._get_search_viewstate()
+        fields["content"] = params.keyword
+        fields["searchType"] = params.search_type
+        fields["filetype"] = params.file_type
+        fields["fileTime"] = params.file_year
+        fields["AccurateFuzzy"] = params.match_mode
+
+        search_url = f"{self.wjxt_ui}/search.aspx"
+
+        if page <= 1:
+            fields["__EVENTTARGET"] = "Button1"
+            fields["__EVENTARGUMENT"] = ""
+            html = await self._search_post(search_url, fields)
+        else:
+            fields["__EVENTTARGET"] = "Button1"
+            fields["__EVENTARGUMENT"] = ""
+            html_p1 = await self._search_post(search_url, dict(fields))
+            vs = _base.extract_viewstate(html_p1)
+            vs.update(_base.extract_hidden_fields(html_p1))
+            vs["__EVENTTARGET"] = "AspNetPager1"
+            vs["__EVENTARGUMENT"] = str(page)
+            resp = await self._post(
+                search_url, data=vs,
+                headers={"Referer": search_url},
+            )
+            resp.encoding = "gbk"
+            html = resp.text
+
+        files = _base.parse_search_results(html, self.wjxt_ui)
+        total_count = _base.parse_search_record_count(html)
+        per_page = 50
+        total_pages = max(1, (total_count + per_page - 1) // per_page)
+
+        return SearchResult(
+            files=files,
+            total_count=total_count,
+            current_page=page,
+            total_pages=total_pages,
+            per_page=per_page,
+        )
+
+    async def iter_search(self, params: SearchParams = None,
+                          max_pages: int = None, **kwargs) -> AsyncIterator[FileInfo]:
+        """惰性搜索遍历全部结果（自动翻页）"""
+        result = await self.search(params=params, page=1, **kwargs)
+        for f in result.files:
+            yield f
+
+        total_pages = result.total_pages
+        if max_pages:
+            total_pages = min(total_pages, max_pages)
+
+        for p in range(2, total_pages + 1):
+            await asyncio.sleep(self._config.page_delay)
+            page_result = await self.search(params=params, page=p, **kwargs)
+            for f in page_result.files:
+                yield f
+
+    async def search_files(self, keyword: str = "",
+                           search_type: str = "title") -> SearchResult:
+        """简单搜索（向后兼容）"""
+        return await self.search(keyword=keyword, search_type=search_type)
+
+    async def file_search(self, keyword: str = "") -> SearchResult:
+        """高级搜索（向后兼容）"""
+        return await self.search(keyword=keyword)
 
     # ------------------------------------------------------------------
     # 6. 用户管理

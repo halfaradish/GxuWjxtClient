@@ -181,10 +181,12 @@ def demo_search(client: WjxtClient):
     print("[9] 搜索")
     print("=" * 60)
 
-    html = client.search_files(keyword="通知")
-    is_maintenance = "维护" in html
-    print(f"  搜索结果: {len(html)} 字节")
-    print(f"  {'系统维护中，搜索功能暂不可用' if is_maintenance else '可用'}")
+    result = client.search(keyword="通知", file_year="2026")
+    print(f"  搜索 '通知' (2026年): 共 {result.total_count} 条, {result.total_pages} 页")
+    for f in result.files[:5]:
+        print(f"    [{f.index}] {f.department}: {f.title[:60]} ({f.date})")
+    if result.total_count > 5:
+        print(f"    ... 还有 {result.total_count - 5} 条")
     print()
 
 

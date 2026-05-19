@@ -112,6 +112,16 @@ with WjxtClient(username="学号", password="密码") as client:
     # 下载文件
     path = client.download_file(file_id=61424, save_dir="./downloads")
 
+    # 搜索文件
+    result = client.search(keyword="奖学金", search_type="content")
+    print(f"搜索到 {result.total_count} 条, 共 {result.total_pages} 页")
+    for f in result.files[:5]:
+        print(f"  [{f.index}] {f.department}: {f.title} ({f.date})")
+
+    # 惰性遍历搜索结果（自动翻页）
+    for f in client.iter_search(keyword="2026", file_year="2026", max_pages=3):
+        print(f"{f.title}")
+
     # 电话簿
     contacts = client.parse_phone_list()
     for c in contacts:
@@ -240,7 +250,7 @@ downloads/
 | 主页/导航 | `Wjxt_UI/default.aspx`, `WebUI.aspx?id=2/4` |
 | 文件管理 | `PageList.aspx`, `qstwj.aspx`, `showfile.aspx`, `Right.aspx` |
 | 文件下载 | `/filezip/uploadfile/{year}/{month}/{filename}` |
-| 搜索 | `search.aspx`, `filesearch.aspx` |
+| 搜索 | `search.aspx`, `filesearch.aspx`, `showdoc.aspx` |
 | 用户管理 | `userEditPss.aspx` |
 | 电话簿 | `phoneList.aspx` |
 | 业务办理 | `business/business_*.aspx` |
@@ -253,7 +263,6 @@ downloads/
 
 ## 注意事项
 
-- 搜索功能当前返回"系统维护中"，非 SDK 问题
 - 大量文件列表中约 50% 为纯文本公告，无附件可下载
 - 默认 0.5 秒翻页间隔，避免对服务器造成压力
 - `config.json` 包含敏感信息，已加入 `.gitignore`

@@ -202,8 +202,27 @@ if not attachments: return None         # 无附件时目录已空
 #### 搜索
 | 端点 | 方法 | 说明 |
 |------|------|------|
-| `/Wjxt_UI/search.aspx` | GET/POST | 搜索 (当前维护中) |
-| `/Wjxt_UI/filesearch.aspx` | GET | 高级搜索 (当前维护中) |
+| `/Wjxt_UI/search.aspx` | GET/POST | 文件搜索（需 GB2312 编码 POST） |
+| `/Wjxt_UI/filesearch.aspx` | POST | 高级搜索（等同 search.aspx） |
+| `/Wjxt_UI/showdoc.aspx?id=N` | GET | 搜索结果链接（等同 showfile.aspx） |
+
+**搜索表单字段**（表单嵌入在侧边栏 `WebUI.aspx?id=2` 中）：
+
+| 字段 | 值 | 说明 |
+|------|------|------|
+| `content` | 关键字 | 搜索关键词 |
+| `searchType` | `title` / `fileNum` / `content` | 搜索类型：标题 / 文件号 / 全文 |
+| `filetype` | `全部文件` 或部门 ID | 文件范围筛选 |
+| `fileTime` | `0`（全部）或年份 | 年份筛选 |
+| `AccurateFuzzy` | `Accurate` / `Fuzzy` | 精确 / 模糊匹配 |
+| `__EVENTTARGET` | `Button1` | 触发搜索提交 |
+
+**技术要点：**
+- GET 请求返回"系统维护中"，必须用 POST 提交搜索
+- **POST 数据必须 GB231K 编码**：中文关键字用 UTF-8 提交会导致"查无文件"
+- `filesearch.aspx` 与 `search.aspx` 返回完全相同的搜索结果页
+- 搜索结果链接为 `showdoc.aspx?id=N`，与 `showfile.aspx?id=N` 内容一致
+- 搜索结果使用 `AspNetPager1` 分页（每页 50 条），翻页需用标准 UTF-8 POST
 
 #### 用户管理
 | 端点 | 方法 | 说明 |
@@ -232,6 +251,17 @@ if not attachments: return None         # 无附件时目录已空
 - 学工部文件: 2,428 条 (49 页)
 - 电话簿联系人: 101 人
 
+**搜索数据（2026-05-19 实测）：**
+
+| 搜索类型 | 关键字 | 结果数 |
+|---------|--------|--------|
+| 标题模糊 | "关于" | 12,873 条 (258 页) |
+| 全文模糊 | "奖学金" | 14,653 条 (294 页) |
+| 文件号模糊 | "2026" | 7,667 条 (154 页) |
+| 标题模糊 × 2025 年 | "通知" | 345 条 (7 页) |
+| 标题模糊 × 学工部 | "学生" | 2,229 条 (45 页) |
+| 标题模糊 × 2026 年 | "通知" | 138 条 (3 页) |
+
 ### 3.4 爬虫输出目录结构
 
 ```
@@ -256,8 +286,9 @@ downloads/
 
 1. **ASP.NET Web Forms 逆向:** 关键在于理解 VIEWSTATE 机制和 `__doPostBack` 分页模式
 2. **编码处理:** 不要信任服务器声明的编码，使用 `apparent_encoding` 自动检测
-3. **curl vs requests:** curl 的 `--data-urlencode` 对字段名编码会导致表单提交失败，requests 的 `data=` 参数字段名不编码
-4. **正则匹配:** `re.search()` 只返回首个匹配，多值场景必须用 `re.finditer()`
+3. **POST 数据编码陷阱:** ASP.NET 服务器端使用 GB2312 解码表单数据，中文关键字必须 GB2312 编码 POST 才能被正确识别；UTF-8 提交会返回"查无文件"
+4. **curl vs requests:** curl 的 `--data-urlencode` 对字段名编码会导致表单提交失败，requests 的 `data=` 参数字段名不编码
+5. **正则匹配:** `re.search()` 只返回首个匹配，多值场景必须用 `re.finditer()`
 
 ### 文件组织建议
 
@@ -267,6 +298,5 @@ downloads/
 
 ### 局限性
 
-- 搜索功能 (`search.aspx` / `filesearch.aspx`) 在非工作时间返回"系统维护中"，未完成逆向
 - 业务办理模块 (`business/`) 仅完成页面抓取，未深入测试提交逻辑
 - 会话有效期内无需重新登录，但超时后的自动重连未实现

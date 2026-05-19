@@ -19,6 +19,8 @@ from .types import (
     DepartmentInfo,
     PhoneContact,
     PaginationInfo,
+    SearchParams,
+    SearchResult,
     CrawlStats,
 )
 
@@ -44,5 +46,7 @@ __all__ = [
     "DepartmentInfo",
     "PhoneContact",
     "PaginationInfo",
+    "SearchParams",
+    "SearchResult",
     "CrawlStats",
 ]

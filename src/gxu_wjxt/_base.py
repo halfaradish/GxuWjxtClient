@@ -42,6 +42,18 @@ def decode_gb2312(encoded: str) -> str:
     return unquote(encoded, encoding="gb2312") if encoded else ""
 
 
+def encode_post_data_gb2312(fields: dict) -> str:
+    """将表单字段编码为 GB2312 URL-encoded POST body
+
+    ASP.NET 服务器端使用 GB2312 解析表单数据，若用 UTF-8 提交中文
+    关键字会导致搜索无结果。此函数对所有字段名和字段值做 GB2312 编码。
+    """
+    return "&".join(
+        f"{quote(k, encoding='gb2312')}={quote(v, encoding='gb2312')}"
+        for k, v in fields.items()
+    )
+
+
 def parse_file_list(html: str, base_url: str) -> list[FileInfo]:
     """解析文件列表 HTML，返回 FileInfo 列表"""
     files = []
@@ -169,6 +181,79 @@ def parse_phone_list(html: str) -> list[PhoneContact]:
                     ))
 
     return contacts
+
+
+def parse_search_results(html: str, base_url: str) -> list[FileInfo]:
+    """解析搜索结果页的 GridFiles 表"""
+    files = []
+    soup = BeautifulSoup(html, "html.parser")
+    grid = soup.find("table", id="GridFiles")
+    if not grid:
+        return files
+
+    rows = grid.find_all("tr")
+    for row in rows:
+        cells = row.find_all("td")
+        if len(cells) < 3:
+            continue
+
+        index_cell = cells[0].get_text(strip=True)
+        if not index_cell or not index_cell.startswith("["):
+            continue
+
+        file_id = None
+        title = ""
+        department = ""
+        date_str = ""
+        is_unread = False
+
+        content_cell = cells[1]
+        link = content_cell.find("a")
+        if link:
+            href = link.get("href", "")
+            m = re.search(r"id=(\d+)", href)
+            if m:
+                file_id = int(m.group(1))
+            title = link.get_text(strip=True)
+
+        bold = content_cell.find("b")
+        if bold:
+            department = bold.get_text(strip=True).rstrip(":")
+
+        if "未读" in content_cell.get_text():
+            is_unread = True
+
+        if len(cells) > 3:
+            date_match = re.search(
+                r"(\d{4})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日",
+                cells[3].get_text()
+            )
+            if date_match:
+                date_str = (
+                    f"{date_match.group(1)}-"
+                    f"{date_match.group(2).zfill(2)}-"
+                    f"{date_match.group(3).zfill(2)}"
+                )
+
+        detail_url = f"{base_url}/showfile.aspx?id={file_id}" if file_id else ""
+
+        files.append(FileInfo(
+            id=file_id,
+            index=index_cell.strip("[] "),
+            title=title,
+            department=department,
+            date=date_str,
+            is_unread=is_unread,
+            detail_url=detail_url,
+        ))
+
+    return files
+
+
+def parse_search_record_count(html: str) -> int:
+    """从搜索结果的 showtype 中提取 '共XXXX条' 的记录总数"""
+    m = re.search(r"共(\d+)条", html)
+    return int(m.group(1)) if m else 0
 
 
 def safe_filename(name: str, max_len: int = 120) -> str:

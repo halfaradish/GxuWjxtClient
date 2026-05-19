@@ -55,6 +55,26 @@ class DepartmentInfo:
 
 
 @dataclass
+class SearchParams:
+    """搜索参数"""
+    keyword: str = ""
+    search_type: str = "title"   # "title" | "fileNum" | "content"
+    file_type: str = "全部文件"   # "全部文件" | "前一周文件" | "前一个月文件" | dept_id
+    file_year: str = "0"         # "0" = 全部年份, or e.g. "2026"
+    match_mode: str = "Fuzzy"    # "Accurate" | "Fuzzy"
+
+
+@dataclass
+class SearchResult:
+    """单页搜索结果"""
+    files: list[FileInfo] = field(default_factory=list)
+    total_count: int = 0
+    current_page: int = 1
+    total_pages: int = 1
+    per_page: int = 50
+
+
+@dataclass
 class PhoneContact:
     name: str = ""
     phone: str = ""

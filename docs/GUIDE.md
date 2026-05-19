@@ -349,14 +349,60 @@ path = client.download_file(
 ### 3.6 搜索
 
 ```python
-# 普通搜索
-html = client.search_files(keyword="奖学金", search_type="title")
+from gxu_wjxt import SearchParams
 
-# 高级搜索
-html = client.file_search(keyword="奖学金")
+# 标题搜索
+result = client.search(keyword="奖学金", search_type="title")
+print(f"搜索到 {result.total_count} 条, {result.total_pages} 页")
+for f in result.files[:5]:
+    print(f"  [{f.index}] {f.department}: {f.title} ({f.date})")
+
+# 全文搜索
+result = client.search(keyword="奖学金", search_type="content")
+
+# 文件号搜索
+result = client.search(keyword="2026", search_type="fileNum")
+
+# 组合筛选
+result = client.search(
+    keyword="通知", search_type="title",
+    file_year="2026",           # 年份
+    file_type="16",             # 学工部
+    match_mode="Fuzzy",         # 模糊匹配
+)
+
+# SearchParams 对象
+params = SearchParams(keyword="考试", file_year="2026")
+result = client.search(params, page=2)  # 翻页
+
+# 惰性遍历搜索结果（自动翻页）
+for f in client.iter_search(keyword="2026", max_pages=3):
+    print(f.title)
+
+# 向后兼容接口（仍可用）
+result = client.search_files(keyword="奖学金")
+result = client.file_search(keyword="奖学金")
 ```
 
-> **注意：** 搜索功能可能在非工作时间返回"系统维护中"，非 SDK 问题。
+**搜索参数 (`SearchParams`):**
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `keyword` | str | `""` | 搜索关键词 |
+| `search_type` | str | `"title"` | `"title"` / `"fileNum"` / `"content"` |
+| `file_type` | str | `"全部文件"` | `"全部文件"` / `"前一周文件"` / `"前一个月文件"` / 部门 ID |
+| `file_year` | str | `"0"` | `"0"` = 全部年份, 或 `"2026"` 等 |
+| `match_mode` | str | `"Fuzzy"` | `"Fuzzy"` 模糊 / `"Accurate"` 精确 |
+
+**返回 (`SearchResult`):**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `files` | `list[FileInfo]` | 当前页文件列表 |
+| `total_count` | int | 搜索结果总数 |
+| `current_page` | int | 当前页码 |
+| `total_pages` | int | 总页数 |
+| `per_page` | int | 每页条数（固定 50） |
 
 ### 3.7 电话簿
 

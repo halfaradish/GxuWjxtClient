@@ -5,4 +5,5 @@ __pycache__/
 download_history.json
 *.egg-info/
 /dist
-/build/
+/build/*test*.py
+__test__/

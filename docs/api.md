@@ -187,21 +187,76 @@ GET /filezip/uploadfile/{year}/{month}/{filename}
 
 ## 四、搜索模块
 
-### 4.1 搜索页
+搜索表单嵌入在侧边栏 `WebUI.aspx?id=2` 中，VIEWSTATE 需从此页面提取。
+
+> **重要:** GET 请求返回"系统维护中"，必须使用 POST。中文关键字必须 GB2312 URL 编码，否则服务器无法识别。
+
+### 4.1 搜索提交
 
 ```
-GET /Wjxt_UI/search.aspx
+POST /Wjxt_UI/search.aspx
+Content-Type: application/x-www-form-urlencoded
 ```
 
-**状态:** 当前返回"系统维护中"（可能于非工作时间禁用）。
+**表单字段:**
 
-### 4.2 文件高级搜索
+| 字段名 | 值 | 说明 |
+|--------|-----|------|
+| `content` | 关键字 | 搜索关键词 |
+| `searchType` | `title` / `fileNum` / `content` | 搜索类型：标题 / 文件号 / 全文 |
+| `filetype` | `全部文件` / `前一周文件` / `前一个月文件` / 部门 ID | 文件范围 |
+| `fileTime` | `0`（全部年份）或 `2026` 等 | 年份筛选 |
+| `AccurateFuzzy` | `Accurate` / `Fuzzy` | 精确 / 模糊匹配 |
+| `__EVENTTARGET` | `Button1` | 触发搜索提交 |
+| `__EVENTARGUMENT` | `""` | 固定为空 |
+
+**编码要求:** 必须使用 GB2312 编码 POST body。UTF-8 提交中文关键字会导致"查无文件"。
+
+**翻页:**
 
 ```
-GET /Wjxt_UI/filesearch.aspx
+POST /Wjxt_UI/search.aspx
+__EVENTTARGET=AspNetPager1
+__EVENTARGUMENT=<页码>
 ```
 
-**状态:** 当前返回"系统维护中"（可能于非工作时间禁用）。
+翻页参数不含中文，使用标准 UTF-8 编码 POST 即可。VIEWSTATE 需从搜索结果页第 1 页提取。
+
+### 4.2 高级搜索
+
+```
+POST /Wjxt_UI/filesearch.aspx
+```
+
+参数与搜索提交相同，`<form action="filesearch.aspx">`。返回结果与 `search.aspx` 完全一致。
+
+### 4.3 搜索结果页面
+
+**响应:**
+- `showtype` span: "查询结果如下：" 或 "查无文件"
+- `GridFiles` 表格: 同文件列表格式
+- `AspNetPager1`: 分页控件（每页 50 条）
+- 分页信息格式: `第N页/总M页  每页50条/共X条`
+
+**结果链接:** 搜索结果使用 `showdoc.aspx?id=N`（与 `showfile.aspx?id=N` 内容一致）。
+
+### 4.4 文件类型 (filetype) 选项
+
+| 值 | 说明 |
+|----|------|
+| `全部文件` | 所有文件 |
+| `前一周文件` | 最近一周 |
+| `前一个月文件` | 最近一个月 |
+| `13` | 党委文件 |
+| `11` | 行政文件 |
+| `10` ~ `196` | 各部门 ID（参见第八节部门 ID 参考） |
+
+### 4.5 年份 (fileTime) 选项
+
+| 值 | 说明 |
+|----|------|
+| `0` | 全部年份 |
+| `2026` ~ `1996` | 指定年份 |
 
 ---
 
@@ -363,9 +418,9 @@ POST /business/businessAdd.aspx
 ## 九、Python 客户端用法
 
 ```python
-from client import WjxtClient
+from gxu_wjxt import WjxtClient, SearchParams
 
-client = WjxtClient("username", "password")
+client = WjxtClient(username="学号", password="密码")
 
 # 登录
 client.login()
@@ -374,23 +429,44 @@ client.login()
 departments = client.get_departments()
 
 # 获取文件列表 (分页)
-html = client.get_file_list(page=1)
-files = client.parse_file_list(html)
-page_info = client.get_pagination_info(html)
+files, page_info = client.get_file_list_structured(page=1)
 
 # 获取文件详情
 detail = client.get_file_detail(file_id=61424)
-print(detail["title"], detail["download_url"])
+for att in detail.download_urls:
+    print(att.filename, att.url)
 
 # 下载文件
 path = client.download_file(file_id=61424, save_dir="./downloads")
 
 # 获取部门文件
 html = client.get_dept_files(dept_id=16, dept_name="学工部（处）、武装部（就业中心）")
-dept_files = client.parse_file_list(html)
+
+# 搜索文件 (标题)
+result = client.search(keyword="奖学金", search_type="title")
+print(f"搜索到 {result.total_count} 条, {result.total_pages} 页")
+
+# 搜索文件 (全文)
+result = client.search(keyword="奖学金", search_type="content")
+
+# 搜索文件 (组合筛选)
+result = client.search(
+    keyword="通知", search_type="title",
+    file_year="2026", file_type="16",
+    match_mode="Fuzzy",
+)
+
+# 搜索文件 (SearchParams 对象)
+params = SearchParams(keyword="考试", file_year="2026")
+result = client.search(params, page=2)
+
+# 惰性遍历搜索结果（自动翻页）
+for f in client.iter_search(keyword="2026", max_pages=3):
+    print(f.title)
 
 # 获取所有文件 (自动翻页)
-all_files = client.get_all_files_structured()
+for f in client.iter_files(max_pages=5):
+    print(f.title)
 
 # 获取电话簿
 contacts = client.parse_phone_list()
