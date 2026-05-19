@@ -3,3 +3,4 @@ downloads/
 __pycache__/
 *.pyc
 download_history.json
+*.egg-info/
