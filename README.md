@@ -1,5 +1,11 @@
 # gxu-wjxt — 广西大学文件管理系统 Python SDK
 
+[![GitHub](https://img.shields.io/badge/GitHub-仓库-238636?style=flat&logo=github&logoColor=fff&labelColor=000)](https://github.com/halfaradish/GxuWjxtClient) [![License](https://img.shields.io/github/license/halfaradish/GxuWjxtClient?style=flat)](https://github.com/halfaradish/GxuWjxtClient) [![Top Language](https://img.shields.io/github/languages/top/halfaradish/GxuWjxtClient?style=flat)](https://github.com/halfaradish/GxuWjxtClient) [![Last Commit](https://img.shields.io/github/last-commit/halfaradish/GxuWjxtClient?style=flat)](https://github.com/halfaradish/GxuWjxtClient)
+
+[![PyPI](https://img.shields.io/pypi/v/gxu-wjxt?style=flat)](https://pypi.org/project/gxu-wjxt/)
+
+---
+
 [wjxt.gxu.edu.cn](https://wjxt.gxu.edu.cn) 的 Python SDK，提供 API 封装、文件下载、数据解析，支持同步和异步。
 
 ## 安装
