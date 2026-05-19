@@ -8,7 +8,7 @@
 pip install gxu-wjxt
 ```
 
-> 详细使用指南见 **[GUIDE.md](GUIDE.md)**，包含所有 API 用法、数据类参考、最佳实践和完整示例。
+> 详细使用指南见 **[GUIDE.md](./docs/GUIDE.md)**，包含所有 API 用法、数据类参考、最佳实践和完整示例。
 
 开发安装：
 
