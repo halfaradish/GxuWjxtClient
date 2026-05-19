@@ -8,7 +8,7 @@
 pip install gxu-wjxt
 ```
 
-> 详细使用指南见 **[./docs/GUIDE.md](https://github.com/halfaradish/GxuWjxtClient/blob/main/docs/GUIDE.md)**，包含所有 API 用法、数据类参考、最佳实践和完整示例。
+> 详细使用指南见 **[docs/GUIDE.md](https://github.com/halfaradish/GxuWjxtClient/blob/main/docs/GUIDE.md)**，包含所有 API 用法、数据类参考、最佳实践和完整示例。
 
 开发安装：
 
@@ -174,8 +174,8 @@ gxu-wjxt -o ./downloads -d 16 -n 3 --workers 3
 # 或
 python -m gxu_wjxt.cli -o ./downloads -d all --dry-run
 
-# 兼容旧用法
-python crawler.py -o ./downloads --after 2026-03-01
+# 或使用模块方式
+python -m gxu_wjxt.cli -o ./downloads --after 2026-03-01
 ```
 
 | 参数 | 说明 |
@@ -232,7 +232,7 @@ downloads/
 
 ## API 覆盖
 
-共 19 个端点，覆盖认证、文件管理、搜索、用户、电话簿、业务办理。详见 [api.md](api.md)。
+共 19 个端点，覆盖认证、文件管理、搜索、用户、电话簿、业务办理。详见 [docs/api.md](https://github.com/halfaradish/GxuWjxtClient/blob/main/docs/api.md)。
 
 | 模块 | 端点 |
 |------|------|
