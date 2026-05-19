@@ -261,8 +261,13 @@ class FileCrawler:
     # ------------------------------------------------------------------
 
     def crawl_all(self, max_pages: int = None, after: date = None,
-                  unread_only: bool = False, dry_run: bool = False) -> CrawlStats:
-        """爬取全部文件（不分部门）"""
+                  unread_only: bool = False, dry_run: bool = False,
+                  max_empty_pages: int = 3) -> CrawlStats:
+        """爬取全部文件（不分部门）
+
+        max_empty_pages: 连续多少页无匹配记录时自动停止，默认 3。
+                         设为 0 禁用提前停止。
+        """
         all_stats = CrawlStats()
 
         html = self._client.get_file_list(page=1)
@@ -276,9 +281,11 @@ class FileCrawler:
         filtered = self.filter_files(files, after=after, unread_only=unread_only)
         print(f"\n[全部文件] 第 1/{total_pages} 页, 本页 {len(files)} 条, 符合条件 {len(filtered)} 条")
 
+        empty_streak = 0 if filtered else 1
+
         if filtered:
             stats = self.download_batch(filtered, dry_run=dry_run)
-            all_stats.total_files += stats.total_files
+            all_stats.total_files += len(files)
             all_stats.downloaded += stats.downloaded
             all_stats.skipped += stats.skipped
             all_stats.no_attachment += stats.no_attachment
@@ -293,21 +300,34 @@ class FileCrawler:
             pct = p / total_pages * 100
             print(f"\n第 {p}/{total_pages} 页 [{pct:.0f}%], 本页 {len(files)} 条, 符合条件 {len(filtered)} 条")
 
-            if filtered:
-                stats = self.download_batch(filtered, dry_run=dry_run)
-                all_stats.total_files += len(files)
-                all_stats.downloaded += stats.downloaded
-                all_stats.skipped += stats.skipped
-                all_stats.no_attachment += stats.no_attachment
-                all_stats.failed += stats.failed
+            if not filtered:
+                if max_empty_pages > 0:
+                    empty_streak += 1
+                    if empty_streak >= max_empty_pages:
+                        print(f"  连续 {empty_streak} 页无匹配记录，停止翻页。")
+                        break
+                continue
+
+            empty_streak = 0
+            stats = self.download_batch(filtered, dry_run=dry_run)
+            all_stats.total_files += len(files)
+            all_stats.downloaded += stats.downloaded
+            all_stats.skipped += stats.skipped
+            all_stats.no_attachment += stats.no_attachment
+            all_stats.failed += stats.failed
 
         return all_stats
 
     def crawl_department(self, dept_id: int, dept_name: str = "",
                          max_pages: int = None, after: date = None,
                          unread_only: bool = False,
-                         dry_run: bool = False) -> CrawlStats:
-        """爬取指定部门文件"""
+                         dry_run: bool = False,
+                         max_empty_pages: int = 3) -> CrawlStats:
+        """爬取指定部门文件
+
+        max_empty_pages: 连续多少页无匹配记录时自动停止，默认 3。
+                         设为 0 禁用提前停止。
+        """
         all_stats = CrawlStats()
 
         html = self._client.get_dept_files(dept_id=dept_id, dept_name=dept_name, page=1)
@@ -321,6 +341,8 @@ class FileCrawler:
         filtered = self.filter_files(files, after=after, unread_only=unread_only)
         print(f"\n  [{dept_id}] {dept_name}")
         print(f"  第 1/{total_pages} 页, 本页 {len(files)} 条, 符合条件 {len(filtered)} 条")
+
+        empty_streak = 0 if filtered else 1
 
         if filtered:
             stats = self.download_batch(filtered, dry_run=dry_run)
@@ -339,19 +361,28 @@ class FileCrawler:
             pct = p / total_pages * 100
             print(f"\n  第 {p}/{total_pages} 页 [{pct:.0f}%], 本页 {len(files)} 条, 符合条件 {len(filtered)} 条")
 
-            if filtered:
-                stats = self.download_batch(filtered, dry_run=dry_run)
-                all_stats.total_files += len(files)
-                all_stats.downloaded += stats.downloaded
-                all_stats.skipped += stats.skipped
-                all_stats.no_attachment += stats.no_attachment
-                all_stats.failed += stats.failed
+            if not filtered:
+                if max_empty_pages > 0:
+                    empty_streak += 1
+                    if empty_streak >= max_empty_pages:
+                        print(f"  连续 {empty_streak} 页无匹配记录，停止翻页。")
+                        break
+                continue
+
+            empty_streak = 0
+            stats = self.download_batch(filtered, dry_run=dry_run)
+            all_stats.total_files += len(files)
+            all_stats.downloaded += stats.downloaded
+            all_stats.skipped += stats.skipped
+            all_stats.no_attachment += stats.no_attachment
+            all_stats.failed += stats.failed
 
         return all_stats
 
     def crawl_all_departments(self, max_pages: int = None, after: date = None,
                               unread_only: bool = False,
-                              dry_run: bool = False) -> CrawlStats:
+                              dry_run: bool = False,
+                              max_empty_pages: int = 3) -> CrawlStats:
         """爬取所有部门的文件"""
         depts = self._client.get_departments()
         print(f"共 {len(depts)} 个部门\n")
@@ -365,6 +396,7 @@ class FileCrawler:
                     d.id, d.tn_decoded,
                     max_pages=max_pages, after=after,
                     unread_only=unread_only, dry_run=dry_run,
+                    max_empty_pages=max_empty_pages,
                 )
                 all_stats.total_files += stats.total_files
                 all_stats.downloaded += stats.downloaded

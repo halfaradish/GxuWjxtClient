@@ -152,6 +152,9 @@ stats = crawler.crawl_department(dept_id=16, dept_name="学工部")
 # 遍历所有部门
 stats = crawler.crawl_all_departments(max_pages=3)
 
+# 控制提前停止：连续 N 页无匹配记录时自动停止（默认 3，设 0 禁用）
+stats = crawler.crawl_all(unread_only=True, max_empty_pages=5)
+
 print(f"下载: {stats.downloaded}, 跳过: {stats.skipped}, 失败: {stats.failed}")
 client.close()
 ```
@@ -177,6 +180,7 @@ python crawler.py -o ./downloads --after 2026-03-01
 | `--after` | 日期过滤 `YYYY-MM-DD` |
 | `--unread-only` | 仅下载未读文件 |
 | `--workers` | 并发线程数（默认 1） |
+| `--max-empty-pages` | 连续 N 页无匹配时停止（默认 3，0 禁用） |
 | `--dry-run` | 预览模式 |
 | `-u, --username` | 用户名 |
 | `-p, --password` | 密码 |

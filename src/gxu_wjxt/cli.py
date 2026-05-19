@@ -41,6 +41,8 @@ def main():
                         help="仅下载未读文件")
     parser.add_argument("--workers", type=int, default=1,
                         help="并发下载线程数 (默认: 1)")
+    parser.add_argument("--max-empty-pages", type=int, default=3,
+                        help="连续 N 页无匹配记录时停止 (默认: 3，设为 0 禁用)")
     parser.add_argument("--dry-run", action="store_true",
                         help="预览模式，不实际下载文件")
     parser.add_argument("-u", "--username", default=None, help="用户名")
@@ -95,11 +97,13 @@ def main():
             stats = crawler.crawl_all(
                 max_pages=args.max_pages, after=after_date,
                 unread_only=args.unread_only, dry_run=args.dry_run,
+                max_empty_pages=args.max_empty_pages,
             )
         elif args.dept.lower() == "all":
             stats = crawler.crawl_all_departments(
                 max_pages=args.max_pages, after=after_date,
                 unread_only=args.unread_only, dry_run=args.dry_run,
+                max_empty_pages=args.max_empty_pages,
             )
         else:
             dept_id = int(args.dept)
@@ -116,6 +120,7 @@ def main():
                 dept_id, dept_name,
                 max_pages=args.max_pages, after=after_date,
                 unread_only=args.unread_only, dry_run=args.dry_run,
+                max_empty_pages=args.max_empty_pages,
             )
 
     except KeyboardInterrupt:
