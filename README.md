@@ -1,45 +1,74 @@
-# 广西大学文件管理系统 Python 客户端
+# gxu-wjxt — 广西大学文件管理系统 Python SDK
 
-[wjxt.gxu.edu.cn](https://wjxt.gxu.edu.cn) 的 Python 爬虫工具集，提供 API 封装、文件下载、数据解析。
+[wjxt.gxu.edu.cn](https://wjxt.gxu.edu.cn) 的 Python SDK，提供 API 封装、文件下载、数据解析，支持同步和异步。
+
+## 安装
+
+```bash
+pip install gxu-wjxt
+```
+
+开发安装：
+
+```bash
+git clone https://github.com/halfaradish/GxuWjxtClient.git
+cd GxuWjxtClient
+pip install -e .
+```
 
 ## 项目结构
 
 ```
 .
-├── client.py              # API 客户端（核心库）
-├── crawler.py             # 文件下载爬虫
-├── demo.py                # 功能演示脚本
-├── api.md                 # API 接口文档
-├── config.example.json    # 配置文件模板
-├── config.json            # 配置文件（已 gitignore）
+├── src/gxu_wjxt/
+│   ├── __init__.py          # 公开 API 导出
+│   ├── client.py            # 同步客户端
+│   ├── async_client.py      # 异步客户端
+│   ├── crawler.py           # 文件下载爬虫
+│   ├── config.py            # 配置管理
+│   ├── exceptions.py        # 异常层次
+│   ├── types.py             # 数据类
+│   ├── _base.py             # 内部工具函数
+│   └── cli.py               # CLI 入口
+├── client.py                # 向后兼容 shim
+├── crawler.py               # 向后兼容 shim
+├── demo.py                  # 演示脚本
+├── pyproject.toml           # 打包配置
+├── api.md                   # API 接口文档
+├── config.example.json      # 配置文件模板
 └── README.md
 ```
 
 ## 快速开始
 
-### 1. 安装依赖
+### 1. 配置凭证（三选一）
 
-```bash
-pip install requests beautifulsoup4
-```
-
-### 2. 配置账密
+**方式 A — 配置文件：**
 
 ```bash
 cp config.example.json config.json
-# 编辑 config.json，填入你的学号和密码
+# 编辑 config.json
 ```
-
-`config.json` 格式：
 
 ```json
-{
-    "username": "your_student_id",
-    "password": "your_password"
-}
+{"username": "your_student_id", "password": "your_password"}
 ```
 
-### 3. 运行演示
+**方式 B — 环境变量：**
+
+```bash
+export WJXT_USERNAME=your_student_id
+export WJXT_PASSWORD=your_password
+```
+
+**方式 C — 直接传参（推荐）：**
+
+```python
+from gxu_wjxt import WjxtClient
+client = WjxtClient(username="学号", password="密码")
+```
+
+### 2. 运行演示
 
 ```bash
 python demo.py
@@ -47,75 +76,137 @@ python demo.py
 
 ## 使用方式
 
-### client.py — API 客户端
+### 同步客户端
 
 ```python
-from client import WjxtClient
+from gxu_wjxt import WjxtClient
 
-client = WjxtClient("学号", "密码")
+with WjxtClient(username="学号", password="密码") as client:
+    client.login()
+
+    # 获取部门列表
+    depts = client.get_departments()
+    for d in depts:
+        print(f"[{d.id}] {d.tn_decoded}")
+
+    # 获取分页文件列表
+    files, page_info = client.get_file_list_structured(page=1)
+    print(f"第{page_info.current_page}/{page_info.total_pages}页, "
+          f"共{page_info.total_items}条")
+
+    # 惰性遍历全部文件（自动翻页）
+    for f in client.iter_files(max_pages=5):
+        print(f"[{f.index}] {f.department}: {f.title} ({f.date})")
+
+    # 获取文件详情
+    detail = client.get_file_detail(file_id=61424)
+    for att in detail.download_urls:
+        print(f"  附件: {att.filename} -> {att.url}")
+
+    # 下载文件
+    path = client.download_file(file_id=61424, save_dir="./downloads")
+
+    # 电话簿
+    contacts = client.parse_phone_list()
+    for c in contacts:
+        print(f"{c.name}: {c.phone}")
+
+    client.logout()
+```
+
+### 异步客户端
+
+```python
+import asyncio
+from gxu_wjxt import AsyncWjxtClient
+
+async def main():
+    async with AsyncWjxtClient(username="学号", password="密码") as client:
+        await client.login()
+
+        # 异步遍历文件列表
+        async for f in client.iter_files(max_pages=3):
+            print(f.title)
+
+        await client.logout()
+
+asyncio.run(main())
+```
+
+### 文件爬虫
+
+```python
+from gxu_wjxt import WjxtClient, FileCrawler
+
+client = WjxtClient(username="学号", password="密码")
 client.login()
 
-# 获取部门列表
-depts = client.get_departments()
+crawler = FileCrawler(client, download_dir="./downloads", workers=3)
 
-# 获取文件列表（分页）
-html = client.get_file_list(page=1)
-files = client.parse_file_list(html)
-info = client.get_pagination_info(html)
+# 爬取全部（指定最大页数、仅未读）
+stats = crawler.crawl_all(max_pages=5, unread_only=True)
 
-# 获取文件详情与下载链接
-detail = client.get_file_detail(file_id=61424)
-# detail["download_urls"] -> [{url, filename}, ...]
-
-# 下载文件
-client.download_file(file_id=61424, save_dir="./downloads")
-
-# 获取电话簿
-contacts = client.parse_phone_list()
-
-client.logout()
-```
-
-### crawler.py — 文件下载爬虫
-
-```bash
-# 下载全部文件
-python crawler.py -o ./downloads
-
-# 只下载某个部门最近 3 页
-python crawler.py -d 16 -n 3
+# 按部门爬取
+stats = crawler.crawl_department(dept_id=16, dept_name="学工部")
 
 # 遍历所有部门
-python crawler.py -d all
+stats = crawler.crawl_all_departments(max_pages=3)
 
-# 仅下载指定日期之后的文件
-python crawler.py --after 2026-03-01
-
-# 仅下载未读文件
-python crawler.py --unread-only
-
-# 预览模式（不实际下载）
-python crawler.py --dry-run
-
-# 指定输出目录
-python crawler.py -o /path/to/dir
+print(f"下载: {stats.downloaded}, 跳过: {stats.skipped}, 失败: {stats.failed}")
+client.close()
 ```
 
-#### 参数说明
+### CLI 命令行
+
+```bash
+# pip install 后
+gxu-wjxt -o ./downloads -d 16 -n 3 --workers 3
+
+# 或
+python -m gxu_wjxt.cli -o ./downloads -d all --dry-run
+
+# 兼容旧用法
+python crawler.py -o ./downloads --after 2026-03-01
+```
 
 | 参数 | 说明 |
 |------|------|
 | `-o, --output` | 下载目录（默认 `./downloads`） |
-| `-d, --dept` | 部门 ID 或 `all`（默认全部文件不分部门） |
-| `-n, --max-pages` | 每个部门最多爬取页数 |
+| `-d, --dept` | 部门 ID 或 `all` |
+| `-n, --max-pages` | 最多爬取页数 |
 | `--after` | 日期过滤 `YYYY-MM-DD` |
 | `--unread-only` | 仅下载未读文件 |
 | `--workers` | 并发线程数（默认 1） |
 | `--dry-run` | 预览模式 |
-| `-u, --username` | 用户名（覆盖配置文件） |
-| `-p, --password` | 密码（覆盖配置文件） |
+| `-u, --username` | 用户名 |
+| `-p, --password` | 密码 |
 
-#### 输出目录结构
+### 配置优先级
+
+```
+构造函数参数 > 环境变量 > 配置文件 > 默认值
+```
+
+```python
+from gxu_wjxt import WjxtConfig
+
+# 环境变量
+config = WjxtConfig.from_env()
+
+# 配置文件
+config = WjxtConfig.from_file("config.json")
+
+# 自定义
+config = WjxtConfig(
+    base_url="https://wjxt.gxu.edu.cn",
+    myteip="172.28.222.133--2",
+    timeout=30.0,
+    retry_count=3,
+    download_dir="./my_downloads",
+)
+```
+
+### 输出目录结构
 
 ```
 downloads/
@@ -123,44 +214,37 @@ downloads/
 ├── 学工部（处）、武装部（就业中心）/
 │   └── 2026-05-16_关于xxx通报/
 │       ├── 2026-05-16_关于xxx通报.html    # 文件正文
-│       ├── 附件1.doc                       # 附件
-│       └── 附件2.xlsx                      # 附件
+│       ├── 附件1.doc
+│       └── 附件2.xlsx
 └── 校团委/
     └── ...
 ```
 
-### demo.py — 演示脚本
-
-```bash
-python demo.py
-```
-
-依次演示：登录 → 主页 → 文件列表 → 部门文件 → 文件下载 → 电话簿 → 业务办理 → 退出。
-
-## API 接口
+## API 覆盖
 
 共 19 个端点，覆盖认证、文件管理、搜索、用户、电话簿、业务办理。详见 [api.md](api.md)。
 
-| 模块 | 关键端点 |
-|------|----------|
-| 认证 | `default.aspx` `Login.aspx` |
-| 主页 | `Wjxt_UI/default.aspx` `WebUI.aspx` |
-| 文件管理 | `PageList.aspx` `qstwj.aspx` `showfile.aspx` |
+| 模块 | 端点 |
+|------|------|
+| 认证 | `Login.aspx`, `default.aspx`, `Exiting.aspx` |
+| 主页/导航 | `Wjxt_UI/default.aspx`, `WebUI.aspx?id=2/4` |
+| 文件管理 | `PageList.aspx`, `qstwj.aspx`, `showfile.aspx`, `Right.aspx` |
 | 文件下载 | `/filezip/uploadfile/{year}/{month}/{filename}` |
-| 搜索 | `search.aspx` `filesearch.aspx` |
-| 用户 | `userEditPss.aspx` `Exiting.aspx` |
+| 搜索 | `search.aspx`, `filesearch.aspx` |
+| 用户管理 | `userEditPss.aspx` |
 | 电话簿 | `phoneList.aspx` |
-| 业务 | `business/business_*.aspx` |
+| 业务办理 | `business/business_*.aspx` |
 
 ## 依赖
 
 - Python 3.10+
-- [requests](https://pypi.org/project/requests/) — HTTP 请求
+- [httpx](https://www.python-httpx.org/) — HTTP 客户端（同步+异步）
 - [beautifulsoup4](https://pypi.org/project/beautifulsoup4/) — HTML 解析
 
 ## 注意事项
 
-- 搜索功能当前返回"系统维护中"，非代码问题
-- 大量文件列表中约 50% 为纯文本公告，无附件可下载，属正常现象
+- 搜索功能当前返回"系统维护中"，非 SDK 问题
+- 大量文件列表中约 50% 为纯文本公告，无附件可下载
 - 默认 0.5 秒翻页间隔，避免对服务器造成压力
 - `config.json` 包含敏感信息，已加入 `.gitignore`
+- 客户端支持 `with` 语句自动关闭连接
