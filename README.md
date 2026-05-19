@@ -8,7 +8,7 @@
 pip install gxu-wjxt
 ```
 
-> 详细使用指南见 **[GUIDE.md](./docs/GUIDE.md)**，包含所有 API 用法、数据类参考、最佳实践和完整示例。
+> 详细使用指南见 **[./docs/GUIDE.md](https://github.com/halfaradish/GxuWjxtClient/blob/main/docs/GUIDE.md)**，包含所有 API 用法、数据类参考、最佳实践和完整示例。
 
 开发安装：
 
@@ -22,23 +22,27 @@ pip install -e .
 
 ```
 .
-├── src/gxu_wjxt/
-│   ├── __init__.py          # 公开 API 导出
-│   ├── client.py            # 同步客户端
-│   ├── async_client.py      # 异步客户端
-│   ├── crawler.py           # 文件下载爬虫
-│   ├── config.py            # 配置管理
-│   ├── exceptions.py        # 异常层次
-│   ├── types.py             # 数据类
-│   ├── _base.py             # 内部工具函数
-│   └── cli.py               # CLI 入口
-├── client.py                # 向后兼容 shim
-├── crawler.py               # 向后兼容 shim
-├── demo.py                  # 演示脚本
-├── pyproject.toml           # 打包配置
-├── api.md                   # API 接口文档
-├── config.example.json      # 配置文件模板
-└── README.md
+├── src/                      # 源码主目录
+│   └── gxu_wjxt/             # 核心包模块
+│       ├── __init__.py        # 公开 API 导出、向后兼容 shim
+│       ├── client.py          # 同步客户端核心实现
+│       ├── async_client.py    # 异步客户端
+│       ├── crawler.py         # 批量下载爬虫
+│       ├── config.py          # 配置管理类
+│       ├── exceptions.py      # 自定义异常体系
+│       ├── types.py           # 数据模型/类型定义
+│       ├── _base.py           # 底层通用工具（内部使用）
+│       └── cli.py             # 命令行工具入口
+├── docs/                     # 完整文档目录
+│   ├── GUIDE.md              # 使用指南
+│   ├── api.md                # API 接口文档
+│   └── 中文API说明文档.md    # 中文详细说明
+├── dist/                     # 打包发布文件（whl/tar.gz）
+├── demo.py                   # 使用示例脚本
+├── pyproject.toml            # 项目打包 & 依赖配置
+├── config.example.json       # 配置文件模板（参考）
+├── config.json               # 本地实际配置文件
+└── README.md                 # 项目说明文档
 ```
 
 ## 快速开始
