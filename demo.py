@@ -2,19 +2,8 @@
 广西大学文件管理系统 API 演示脚本
 """
 
-import json
 import os
-import sys
-from client import WjxtClient
-
-
-def _load_config():
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    config_path = os.path.join(script_dir, "config.json")
-    if os.path.exists(config_path):
-        with open(config_path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {}
+from gxu_wjxt import WjxtClient, WjxtConfig
 
 
 def demo_basic(client: WjxtClient):
@@ -45,7 +34,7 @@ def demo_main_pages(client: WjxtClient):
     depts = client.get_departments()
     print(f"  解析到 {len(depts)} 个部门:")
     for d in depts[:10]:
-        print(f"    [{d['id']}] {d['tn_decoded']}")
+        print(f"    [{d.id}] {d.tn_decoded}")
     if len(depts) > 10:
         print(f"    ... 还有 {len(depts) - 10} 个")
     print()
@@ -57,26 +46,26 @@ def demo_file_list(client: WjxtClient):
     print("[3] 文件列表 (第1页)")
     print("=" * 60)
 
-    html = client.get_file_list(page=1)
-    files = client.parse_file_list(html)
-    page_info = client.get_pagination_info(html)
+    files, page_info = client.get_file_list_structured(page=1)
 
-    print(f"  分页信息: {page_info}")
+    print(f"  分页信息: 第{page_info.current_page}页/总{page_info.total_pages}页, "
+          f"每页{page_info.per_page}条/共{page_info.total_items}条")
     print(f"  本页文件数: {len(files)}")
     print(f"  前5条:")
     for f in files[:5]:
-        unread = " [未读]" if f["is_unread"] else ""
-        print(f"    [{f['index']}] {f['department']}: {f['title'][:60]} ({f['date']}){unread}")
+        unread = " [未读]" if f.is_unread else ""
+        print(f"    [{f.index}] {f.department}: {f.title[:60]} ({f.date}){unread}")
 
     # 翻到第2页
-    if page_info.get("total_pages", 1) > 1:
+    if page_info.total_pages > 1:
         print(f"\n  翻到第 2 页...")
         html2 = client.get_file_list(page=2)
-        files2 = client.parse_file_list(html2)
-        page_info2 = client.get_pagination_info(html2)
-        print(f"  第2页: {page_info2['current_page']}/{page_info2['total_pages']} 页, {len(files2)} 条")
+        from gxu_wjxt._base import parse_file_list, parse_pagination_info
+        files2 = parse_file_list(html2, client.wjxt_ui)
+        page_info2 = parse_pagination_info(html2)
+        print(f"  第2页: {page_info2.current_page}/{page_info2.total_pages} 页, {len(files2)} 条")
         if files2:
-            print(f"  第2页第1条: {files2[0]['department']}: {files2[0]['title'][:60]}")
+            print(f"  第2页第1条: {files2[0].department}: {files2[0].title[:60]}")
     print()
 
 
@@ -86,18 +75,18 @@ def demo_department_files(client: WjxtClient):
     print("[4] 部门文件")
     print("=" * 60)
 
-    # 获取某个部门的文件 (例如: 学工部 id=16)
     dept_id = 16
     dept_name = "学工部（处）、武装部（就业中心）"
     html = client.get_dept_files(dept_id=dept_id, dept_name=dept_name, page=1)
-    files = client.parse_file_list(html)
-    pinfo = client.get_pagination_info(html)
+    from gxu_wjxt._base import parse_file_list, parse_pagination_info
+    files = parse_file_list(html, client.wjxt_ui)
+    pinfo = parse_pagination_info(html)
 
     print(f"  [{dept_id}] {dept_name}")
-    print(f"  分页信息: {pinfo}")
+    print(f"  分页信息: 第{pinfo.current_page}页/总{pinfo.total_pages}页")
     print(f"  文件数: {len(files)}")
     for f in files[:5]:
-        print(f"    [{f['index']}] {f['title'][:60]} ({f['date']})")
+        print(f"    [{f.index}] {f.title[:60]} ({f.date})")
     print()
 
 
@@ -107,9 +96,9 @@ def demo_file_detail(client: WjxtClient):
     print("[5] 文件详情 & 下载")
     print("=" * 60)
 
-    # 先取列表拿到第一个文件 ID
     html = client.get_file_list(page=1)
-    files = client.parse_file_list(html)
+    from gxu_wjxt._base import parse_file_list
+    files = parse_file_list(html, client.wjxt_ui)
 
     if not files:
         print("  没有可用文件")
@@ -117,18 +106,20 @@ def demo_file_detail(client: WjxtClient):
         return
 
     first_file = files[0]
-    file_id = first_file["id"]
+    file_id = first_file.id
 
     if file_id:
         detail = client.get_file_detail(file_id)
         print(f"  文件 ID: {file_id}")
-        print(f"  标题: {detail['title']}")
-        print(f"  下载 URL: {detail['download_url']}")
+        print(f"  标题: {detail.title}")
+        print(f"  下载 URL: {detail.download_url}")
+        print(f"  附件数: {len(detail.download_urls)}")
 
-        if detail["download_url"]:
-            # 下载文件
-            filepath = client.download_file(file_id=file_id,
-                                            save_dir=os.path.dirname(os.path.abspath(__file__)))
+        if detail.download_url:
+            filepath = client.download_file(
+                file_id=file_id,
+                save_dir=os.path.dirname(os.path.abspath(__file__)),
+            )
             if filepath:
                 size = os.path.getsize(filepath)
                 print(f"  已下载到: {filepath} ({size} 字节)")
@@ -143,11 +134,10 @@ def demo_phone_list(client: WjxtClient):
     print("[6] 电话簿")
     print("=" * 60)
 
-    html = client.get_phone_list()
-    contacts = client.parse_phone_list(html)
+    contacts = client.parse_phone_list()
     print(f"  联系人数量: {len(contacts)}")
     for c in contacts[:10]:
-        print(f"    {c['name']}: {c['phone']} {c['extra']}")
+        print(f"    {c.name}: {c.phone} {c.extra}")
     if len(contacts) > 10:
         print(f"    ... 还有 {len(contacts) - 10} 人")
     print()
@@ -182,8 +172,6 @@ def demo_password(client: WjxtClient):
     html = client.get_password_page()
     print(f"  页面大小: {len(html)} 字节")
     print(f"  包含密码修改表单: {'userPWD1' in html}")
-    # 注意: 实际修改密码需要调用 client.change_password(old, new)
-    # 此处仅演示获取页面
     print()
 
 
@@ -200,10 +188,26 @@ def demo_search(client: WjxtClient):
     print()
 
 
+def demo_generator(client: WjxtClient):
+    """演示：惰性生成器遍历文件"""
+    print("=" * 60)
+    print("[10] 文件生成器 (前10条)")
+    print("=" * 60)
+
+    count = 0
+    for f in client.iter_files(max_pages=1):
+        unread = " [未读]" if f.is_unread else ""
+        print(f"    [{f.index}] {f.department}: {f.title[:60]} ({f.date}){unread}")
+        count += 1
+        if count >= 10:
+            break
+    print()
+
+
 def demo_logout(client: WjxtClient):
     """演示：退出登录"""
     print("=" * 60)
-    print("[10] 退出登录")
+    print("[11] 退出登录")
     print("=" * 60)
     client.logout()
     print("  已退出登录")
@@ -211,12 +215,14 @@ def demo_logout(client: WjxtClient):
 
 
 def main():
-    # 禁用 SSL 警告
-    import urllib3
-    urllib3.disable_warnings()
+    # 加载配置
+    config = WjxtConfig.from_env()
+    config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
+    if os.path.exists(config_path):
+        config = WjxtConfig.from_file(config_path)
 
-    config = _load_config()
-    client = WjxtClient(config.get("username", ""), config.get("password", ""))
+    client = WjxtClient(username=config.username, password=config.password,
+                        base_url=config.base_url, myteip=config.myteip)
 
     demos = [
         ("登录", demo_basic),
@@ -228,6 +234,7 @@ def main():
         ("业务办理", demo_business),
         ("修改密码页面", demo_password),
         ("搜索", demo_search),
+        ("文件生成器", demo_generator),
         ("退出登录", demo_logout),
     ]
 
@@ -238,6 +245,7 @@ def main():
             print(f"  [!] {name} 出错: {e}")
             print()
 
+    client.close()
     print("=" * 60)
     print("演示完成!")
     print("=" * 60)
