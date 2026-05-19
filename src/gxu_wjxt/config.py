@@ -28,6 +28,7 @@ class WjxtConfig:
     # 重试配置
     retry_count: int = 3
     retry_delay: float = 2.0
+    auto_relogin: bool = True
 
     # 爬虫配置
     download_dir: str = "./downloads"

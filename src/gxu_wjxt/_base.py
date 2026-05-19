@@ -54,6 +54,33 @@ def encode_post_data_gb2312(fields: dict) -> str:
     )
 
 
+def is_session_expired(resp_or_text) -> bool:
+    """检测响应是否表明 ASP.NET 会话已过期
+
+    接受 httpx.Response 或 HTML 字符串。对于 Response 对象使用
+    resp.content 避免提前缓存 .text 锁定编码。
+
+    过期特征 (区别于正常登出的 Exiting.aspx):
+    - 响应体极短 (< 500 字节)
+    - 包含 "请重新登录" 提示
+    - 包含 JS 重定向到登录页
+    """
+    if isinstance(resp_or_text, str):
+        text = resp_or_text
+    else:
+        text = resp_or_text.content.decode(
+            resp_or_text.encoding or "gb2312", errors="replace"
+        )
+    if len(text) >= 500:
+        return False
+    if "请重新登录" not in text and "\\\\u8bf7\\\\u91cd\\\\u65b0\\\\u767b\\\\u5f55" not in text:
+        return False
+    return (
+        "default.aspx" in text
+        and ("window.location" in text or "window.parent" in text)
+    )
+
+
 def parse_file_list(html: str, base_url: str) -> list[FileInfo]:
     """解析文件列表 HTML，返回 FileInfo 列表"""
     files = []

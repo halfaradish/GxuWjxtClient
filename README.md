@@ -222,6 +222,7 @@ config = WjxtConfig(
     myteip="172.28.222.133--2",
     timeout=30.0,
     retry_count=3,
+    auto_relogin=True,          # 会话过期自动重连
     download_dir="./my_downloads",
 )
 ```
@@ -265,5 +266,6 @@ downloads/
 
 - 大量文件列表中约 50% 为纯文本公告，无附件可下载
 - 默认 0.5 秒翻页间隔，避免对服务器造成压力
+- 会话过期时自动重连（`auto_relogin=True`），对调用方透明
 - `config.json` 包含敏感信息，已加入 `.gitignore`
 - 客户端支持 `with` 语句自动关闭连接

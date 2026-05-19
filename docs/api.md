@@ -12,6 +12,8 @@
 
 系统使用 `ASP.NET_SessionId` Cookie 维持登录状态。所有 API 请求（除登录外）需要携带该 Cookie。
 
+**会话过期特征：** 服务端返回 `<script>alert('登录信息安全时限过期，请重新登录！');window.parent.location.href='../default.aspx';</script>`（105 字节）。SDK 默认启用自动重连（`auto_relogin=True`），检测到过期后静默重新登录并重试。
+
 ### 请求格式
 
 - Content-Type: `application/x-www-form-urlencoded`

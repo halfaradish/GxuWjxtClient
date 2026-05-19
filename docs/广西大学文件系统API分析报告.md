@@ -289,6 +289,7 @@ downloads/
 3. **POST 数据编码陷阱:** ASP.NET 服务器端使用 GB2312 解码表单数据，中文关键字必须 GB2312 编码 POST 才能被正确识别；UTF-8 提交会返回"查无文件"
 4. **curl vs requests:** curl 的 `--data-urlencode` 对字段名编码会导致表单提交失败，requests 的 `data=` 参数字段名不编码
 5. **正则匹配:** `re.search()` 只返回首个匹配，多值场景必须用 `re.finditer()`
+6. **会话过期检测:** 服务端返回 `<script>alert('登录信息安全时限过期，请重新登录！');window.parent.location.href='../default.aspx';</script>`（105 字节），通过检测"请重新登录"文本可区分正常登出（63 字节无 alert）
 
 ### 文件组织建议
 
@@ -299,4 +300,3 @@ downloads/
 ### 局限性
 
 - 业务办理模块 (`business/`) 仅完成页面抓取，未深入测试提交逻辑
-- 会话有效期内无需重新登录，但超时后的自动重连未实现

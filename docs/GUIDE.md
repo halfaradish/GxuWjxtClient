@@ -186,7 +186,7 @@ if not success:
 client.logout()
 ```
 
-登录成功后会维持 `ASP.NET_SessionId` Cookie，后续请求自动携带。如果会话过期，SDK 不会自动重新登录——需要捕获 `SessionExpiredError` 后手动处理。
+登录成功后会维持 `ASP.NET_SessionId` Cookie，后续请求自动携带。SDK 默认启用 `auto_relogin`，会话过期时自动重新登录并重试请求（最多一次），对调用方完全透明。可通过 `WjxtConfig(auto_relogin=False)` 禁用，此时会抛出 `SessionExpiredError`。
 
 ### 3.3 部门列表
 
@@ -828,18 +828,28 @@ Exception
 
 ### 常见异常场景及处理
 
+> 会话过期自动重连默认已启用，通常无需手动处理 `SessionExpiredError`。以下示例适用于 `auto_relogin=False` 或需要自定义重试逻辑的场景。
+
 ```python
-from gxu_wjxt import WjxtClient, FileCrawler, SessionExpiredError, NetworkError
+from gxu_wjxt import WjxtClient, FileCrawler, WjxtConfig, SessionExpiredError, NetworkError
 import time
 
-def crawl_with_retry(username, password, max_retries=3):
+# 方式 A：默认自动重连（推荐，大多数场景无需额外代码）
+def crawl_simple(username, password):
+    with WjxtClient(username=username, password=password) as client:
+        client.login()
+        crawler = FileCrawler(client, workers=4)
+        return crawler.crawl_all(unread_only=True, max_empty_pages=5)
+
+# 方式 B：禁用自动重连，手动处理
+def crawl_with_manual_retry(username, password, max_retries=3):
+    config = WjxtConfig(auto_relogin=False)
     for attempt in range(max_retries):
         try:
-            with WjxtClient(username=username, password=password) as client:
+            with WjxtClient(username=username, password=password, config=config) as client:
                 if not client.login():
                     print("登录失败")
                     return None
-
                 crawler = FileCrawler(client, workers=4)
                 return crawler.crawl_all(unread_only=True, max_empty_pages=5)
 
@@ -850,7 +860,7 @@ def crawl_with_retry(username, password, max_retries=3):
         except NetworkError as e:
             print(f"网络错误: {e}")
             if attempt < max_retries - 1:
-                time.sleep(5 * (attempt + 1))  # 递增等待
+                time.sleep(5 * (attempt + 1))
             else:
                 raise
 

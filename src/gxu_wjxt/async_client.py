@@ -9,7 +9,7 @@ from typing import AsyncIterator, Optional
 import httpx
 
 from .config import WjxtConfig
-from .exceptions import AuthError, NetworkError
+from .exceptions import AuthError, NetworkError, SessionExpiredError
 from .types import FileInfo, FileDetail, DepartmentInfo, PhoneContact, PaginationInfo, SearchParams, SearchResult
 from . import _base
 
@@ -69,7 +69,7 @@ class AsyncWjxtClient:
         except httpx.RequestError as e:
             raise NetworkError(f"GET {url} 失败: {e}") from e
         resp.encoding = resp.charset_encoding or "gb2312"
-        return resp
+        return await self._check_session(resp, url, method="GET", **kwargs)
 
     async def _post(self, url: str, data: dict = None, **kwargs) -> httpx.Response:
         try:
@@ -77,7 +77,34 @@ class AsyncWjxtClient:
         except httpx.RequestError as e:
             raise NetworkError(f"POST {url} 失败: {e}") from e
         resp.encoding = resp.charset_encoding or "gb2312"
-        return resp
+        return await self._check_session(resp, url, method="POST", data=data, **kwargs)
+
+    async def _check_session(self, resp: httpx.Response, url: str,
+                             method: str = "GET", **kwargs) -> httpx.Response:
+        """检测会话过期并自动重连，最多重试一次"""
+        if not _base.is_session_expired(resp):
+            return resp
+
+        if not self._config.auto_relogin:
+            raise SessionExpiredError("会话已过期，auto_relogin 已禁用")
+
+        self._logged_in = False
+        await self.login()
+
+        try:
+            if method == "GET":
+                resp2 = await self._http.get(url, **kwargs)
+            else:
+                resp2 = await self._http.post(url, **kwargs)
+        except httpx.RequestError as e:
+            raise NetworkError(f"{method} {url} 重试失败: {e}") from e
+
+        resp2.encoding = resp2.charset_encoding or "gb2312"
+        if _base.is_session_expired(resp2):
+            raise SessionExpiredError(
+                "会话已过期，自动重连后仍然失败，请检查账号状态"
+            )
+        return resp2
 
     async def _ensure_logged_in(self):
         if not self._logged_in:
@@ -340,17 +367,33 @@ class AsyncWjxtClient:
         return fields
 
     async def _search_post(self, url: str, fields: dict) -> str:
-        """POST 搜索请求（GB2312 编码）"""
+        """POST 搜索请求（GB2312 编码，含会话自动恢复）"""
         body = _base.encode_post_data_gb2312(fields)
-        resp = await self._http.post(
-            url,
-            content=body,
-            headers={
-                "Content-Type": "application/x-www-form-urlencoded",
-                "Referer": f"{self.wjxt_ui}/WebUI.aspx?id=2",
-            },
-        )
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Referer": f"{self.wjxt_ui}/WebUI.aspx?id=2",
+        }
+        try:
+            resp = await self._http.post(url, content=body, headers=headers)
+        except httpx.RequestError as e:
+            raise NetworkError(f"POST {url} 失败: {e}") from e
         resp.encoding = "gbk"
+
+        if _base.is_session_expired(resp):
+            if not self._config.auto_relogin:
+                raise SessionExpiredError("会话已过期，auto_relogin 已禁用")
+            self._logged_in = False
+            await self.login()
+            try:
+                resp = await self._http.post(url, content=body, headers=headers)
+            except httpx.RequestError as e:
+                raise NetworkError(f"POST {url} 重试失败: {e}") from e
+            resp.encoding = "gbk"
+            if _base.is_session_expired(resp):
+                raise SessionExpiredError(
+                    "会话已过期，自动重连后仍然失败，请检查账号状态"
+                )
+
         return resp.text
 
     async def search(self, params: SearchParams = None, *,
