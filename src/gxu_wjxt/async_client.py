@@ -10,7 +10,7 @@ import httpx
 
 from .config import WjxtConfig
 from .exceptions import AuthError, NetworkError, SessionExpiredError
-from .types import FileInfo, FileDetail, DepartmentInfo, PhoneContact, PaginationInfo, SearchParams, SearchResult
+from .types import FileInfo, FileDetail, DepartmentInfo, PhoneContact, PaginationInfo, SearchParams, SearchResult, BusinessPage
 from . import _base
 
 
@@ -527,42 +527,53 @@ class AsyncWjxtClient:
     # 8. 业务办理
     # ------------------------------------------------------------------
 
-    async def get_todo_list(self) -> str:
+    async def get_todo_list(self) -> BusinessPage:
+        """待办事项"""
         await self._ensure_logged_in()
-        return (await self._get(
+        resp = await self._get(
             f"{self.base_url}/business/business_mytodolists.aspx",
             headers={"Referer": f"{self.wjxt_ui}/default.aspx"},
-        )).text
+        )
+        return _base.parse_business_page(resp.text, "mytodolists")
 
-    async def get_todo_processing(self) -> str:
+    async def get_todo_processing(self) -> BusinessPage:
+        """已批申请（含搜索框）"""
         await self._ensure_logged_in()
-        return (await self._get(
+        resp = await self._get(
             f"{self.base_url}/business/business_DoList.aspx",
             headers={"Referer": f"{self.base_url}/business/business_mytodolists.aspx"},
-        )).text
+        )
+        return _base.parse_business_page(resp.text, "do_list")
 
-    async def get_my_todo_lists(self) -> str:
+    async def get_my_todo_lists(self) -> BusinessPage:
+        """待办事项"""
         await self._ensure_logged_in()
-        return (await self._get(
+        resp = await self._get(
             f"{self.base_url}/business/business_MyToDoLists.aspx",
             headers={"Referer": f"{self.base_url}/business/business_mytodolists.aspx"},
-        )).text
+        )
+        return _base.parse_business_page(resp.text, "my_todo_lists")
 
-    async def get_my_update_lists(self) -> str:
+    async def get_my_update_lists(self) -> BusinessPage:
+        """全部申请"""
         await self._ensure_logged_in()
-        return (await self._get(
+        resp = await self._get(
             f"{self.base_url}/business/business_MyUpLists.aspx",
             headers={"Referer": f"{self.base_url}/business/business_mytodolists.aspx"},
-        )).text
+        )
+        return _base.parse_business_page(resp.text, "my_up_lists")
 
-    async def get_business_add_page(self) -> str:
+    async def get_business_add_page(self) -> BusinessPage:
+        """新增业务表单"""
         await self._ensure_logged_in()
-        return (await self._get(
+        resp = await self._get(
             f"{self.base_url}/business/businessAdd.aspx",
             headers={"Referer": f"{self.base_url}/business/business_mytodolists.aspx"},
-        )).text
+        )
+        return _base.parse_business_page(resp.text, "add")
 
     async def add_business(self, form_data: dict) -> str:
+        """提交新业务（谨慎使用，会创建真实业务记录）"""
         await self._ensure_logged_in()
 
         resp1 = await self._get(f"{self.base_url}/business/businessAdd.aspx")

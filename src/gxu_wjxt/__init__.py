@@ -21,6 +21,8 @@ from .types import (
     PaginationInfo,
     SearchParams,
     SearchResult,
+    BusinessPage,
+    BusinessRecord,
     CrawlStats,
 )
 
@@ -48,5 +50,7 @@ __all__ = [
     "PaginationInfo",
     "SearchParams",
     "SearchResult",
+    "BusinessPage",
+    "BusinessRecord",
     "CrawlStats",
 ]

@@ -306,7 +306,9 @@ GET /Wjxt_UI/phoneList.aspx
 
 ## 七、业务办理模块
 
-所有业务页面位于 `/business/` 路径下。
+所有业务页面位于 `/business/` 路径下。页面使用 ASP.NET AJAX (ScriptManager + UpdatePanel)，数据通过 `gvList1` GridView 渲染（仅在存在记录时可见）。
+
+**导航结构:** 各页面顶部共享导航栏 — 填写申请 | 待办事项 | 已批申请 | 全部申请。当前页标签以 `<strong>` 标记。
 
 ### 7.1 待办列表
 
@@ -314,13 +316,15 @@ GET /Wjxt_UI/phoneList.aspx
 GET /business/business_mytodolists.aspx
 ```
 
-### 7.2 待办处理
+**说明:** 当前用户的待办事项列表。与 `business_MyToDoLists.aspx` 返回相同页面结构。
+
+### 7.2 已批申请
 
 ```
 GET /business/business_DoList.aspx
 ```
 
-**表单字段:** `TextBox1` (搜索框), `mysearch` (搜索按钮)。
+**说明:** 已批准的申请记录，含搜索框（`TextBox1` + `mysearch` 按钮）。
 
 ### 7.3 我的待办列表
 
@@ -328,25 +332,41 @@ GET /business/business_DoList.aspx
 GET /business/business_MyToDoLists.aspx
 ```
 
-### 7.4 我的更新列表
+### 7.4 全部申请
 
 ```
 GET /business/business_MyUpLists.aspx
 ```
 
-### 7.5 新增业务
+**说明:** 当前用户的所有申请记录，包含 AspNetPager 分页。
+
+### 7.5 新增业务表单
 
 ```
 GET /business/businessAdd.aspx
 ```
 
-**说明:** 复杂的业务登记表单，包含多个区域（出差考察、培训、公务、会议、预决算、探亲、其他、附件等），约 70KB 的页面内容。
+**说明:** 业务登记表单，约 70KB，包含以下区域：
+
+| 区域 | 说明 |
+|------|------|
+| 出差考察 | 调研主题、调研单位、起止日期 |
+| 培训 | 培训主题、举办单位、起止日期 |
+| 公务 | 具体事项、起止日期 |
+| 会议 | 会议名称、举办单位、报告详情、论文数 |
+| 预决算 | 具体事项 |
+| 探亲 | 起止日期 |
+| 其他 | 自定义事项 |
+| 附件 | 上传附件 |
+| 审批流 | 经费负责人意见、校领导意见等 |
 
 ### 7.6 提交新业务
 
 ```
 POST /business/businessAdd.aspx
 ```
+
+> ⚠️ **注意:** 提交会创建真实业务工单，请勿在自动化测试中使用。
 
 **参数:** VIEWSTATE 字段 + 业务表单字段（字段因业务类型而异）。
 
@@ -469,6 +489,12 @@ for f in client.iter_search(keyword="2026", max_pages=3):
 # 获取所有文件 (自动翻页)
 for f in client.iter_files(max_pages=5):
     print(f.title)
+
+# 业务办理
+page = client.get_todo_list()
+print(f"标签: {page.active_tab}, 导航: {list(page.nav_links.keys())}")
+for r in page.records:
+    print(r.cells)
 
 # 获取电话簿
 contacts = client.parse_phone_list()

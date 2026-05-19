@@ -149,17 +149,18 @@ def demo_business(client: WjxtClient):
     print("[7] 业务办理")
     print("=" * 60)
 
-    html = client.get_todo_list()
-    print(f"  待办列表: {len(html)} 字节")
-
-    html2 = client.get_my_todo_lists()
-    print(f"  我的待办: {len(html2)} 字节")
-
-    html3 = client.get_my_update_lists()
-    print(f"  我的更新: {len(html3)} 字节")
-
-    html4 = client.get_business_add_page()
-    print(f"  新增业务页: {len(html4)} 字节")
+    for label, page in [
+        ("待办列表", client.get_todo_list()),
+        ("我的待办", client.get_my_todo_lists()),
+        ("已批申请", client.get_todo_processing()),
+        ("全部申请", client.get_my_update_lists()),
+        ("新增业务", client.get_business_add_page()),
+    ]:
+        records_info = f", {len(page.records)} 条记录" if page.records else ""
+        html_len = len(page.raw_html)
+        nav = " > ".join(page.nav_links.keys()) if page.nav_links else "无导航"
+        search = " [搜索框]" if page.has_search else ""
+        print(f"  {label}: {html_len} 字节 | 标签: {nav}{search}{records_info}")
     print()
 
 

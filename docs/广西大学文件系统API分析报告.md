@@ -238,10 +238,15 @@ if not attachments: return None         # 无附件时目录已空
 | 端点 | 方法 | 说明 |
 |------|------|------|
 | `/business/business_mytodolists.aspx` | GET | 待办列表 |
-| `/business/business_DoList.aspx` | GET | 待办处理 |
-| `/business/business_MyToDoLists.aspx` | GET | 我的待办 |
-| `/business/business_MyUpLists.aspx` | GET | 我的更新 |
-| `/business/businessAdd.aspx` | GET/POST | 新增业务 |
+| `/business/business_DoList.aspx` | GET | 已批申请（含搜索框） |
+| `/business/business_MyToDoLists.aspx` | GET | 我的待办列表 |
+| `/business/business_MyUpLists.aspx` | GET | 全部申请（含 AspNetPager） |
+| `/business/businessAdd.aspx` | GET/POST | 新增业务表单 / 提交 |
+
+**页面结构:**
+- 导航标签: 填写申请 \| 待办事项 \| 已批申请 \| 全部申请
+- 数据渲染: `gvList1` GridView（ASP.NET AJAX，无数据时不可见）
+- `businessAdd.aspx` 包含 7 种业务类型（出差、培训、公务、会议、预决算、探亲、其他）+ 附件区域
 
 ### 3.3 数据统计
 
@@ -290,6 +295,7 @@ downloads/
 4. **curl vs requests:** curl 的 `--data-urlencode` 对字段名编码会导致表单提交失败，requests 的 `data=` 参数字段名不编码
 5. **正则匹配:** `re.search()` 只返回首个匹配，多值场景必须用 `re.finditer()`
 6. **会话过期检测:** 服务端返回 `<script>alert('登录信息安全时限过期，请重新登录！');window.parent.location.href='../default.aspx';</script>`（105 字节），通过检测"请重新登录"文本可区分正常登出（63 字节无 alert）
+7. **业务办理模块分析:** 页面使用 ASP.NET AJAX (ScriptManager + UpdatePanel)，GridView `gvList1` 在有记录时才渲染数据行，无数据时完全隐藏。导航标签通过 `<strong>` 标记当前页。`business_DoList.aspx` 含搜索框 (`TextBox1`)。`businessAdd.aspx` 包含出差、培训、公务、会议、预决算、探亲、其他 7 种业务类型的表单区域。
 
 ### 文件组织建议
 
@@ -299,4 +305,5 @@ downloads/
 
 ### 局限性
 
-- 业务办理模块 (`business/`) 仅完成页面抓取，未深入测试提交逻辑
+- 业务办理模块仅完成只读分析（页面结构、导航标签、搜索表单），GridView 在有数据时才会渲染行，当前测试账号无业务记录，无法验证数据行解析
+- `add_business()` 提交会创建真实业务工单，不建议自动化测试

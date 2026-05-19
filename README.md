@@ -122,6 +122,15 @@ with WjxtClient(username="学号", password="密码") as client:
     for f in client.iter_search(keyword="2026", file_year="2026", max_pages=3):
         print(f"{f.title}")
 
+    # 业务办理
+    page = client.get_todo_list()
+    print(f"当前标签: {page.active_tab}, 导航: {list(page.nav_links.keys())}")
+    if page.records:
+        for r in page.records:
+            print(f"  {r.cells}")
+    if page.has_search:
+        print("  支持搜索")
+
     # 电话簿
     contacts = client.parse_phone_list()
     for c in contacts:
@@ -254,7 +263,7 @@ downloads/
 | 搜索 | `search.aspx`, `filesearch.aspx`, `showdoc.aspx` |
 | 用户管理 | `userEditPss.aspx` |
 | 电话簿 | `phoneList.aspx` |
-| 业务办理 | `business/business_*.aspx` |
+| 业务办理 | `business/business_MyToDoLists.aspx`、`business_DoList.aspx`、`business_MyUpLists.aspx`、`businessAdd.aspx` |
 
 ## 依赖
 

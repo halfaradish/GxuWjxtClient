@@ -75,6 +75,26 @@ class SearchResult:
 
 
 @dataclass
+class BusinessRecord:
+    """单条业务记录（GridView 行）"""
+    row_index: int
+    cells: list[str] = field(default_factory=list)
+
+
+@dataclass
+class BusinessPage:
+    """业务办理页面结构化数据"""
+    page_type: str = ""           # "mytodolists" | "do_list" | "my_todo_lists" | "my_up_lists" | "add"
+    page_title: str = ""
+    active_tab: str = ""          # 当前标签页名称
+    nav_links: dict[str, str] = field(default_factory=dict)  # 标签名 -> URL
+    records: list[BusinessRecord] = field(default_factory=list)
+    total_count: int = 0          # GridView 总记录数（0 表示无数据或不可见）
+    has_search: bool = False
+    raw_html: str = ""
+
+
+@dataclass
 class PhoneContact:
     name: str = ""
     phone: str = ""

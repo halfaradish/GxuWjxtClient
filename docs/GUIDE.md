@@ -439,23 +439,32 @@ success = client.change_password(
 ### 3.9 业务办理
 
 ```python
-# 获取待办列表
-html = client.get_todo_list()
+# 各业务页面均返回 BusinessPage 结构
+for label, page in [
+    ("待办事项", client.get_todo_list()),
+    ("已批申请", client.get_todo_processing()),
+    ("全部申请", client.get_my_update_lists()),
+]:
+    print(f"{label}: 标签=\"{page.active_tab}\", "
+          f"导航={list(page.nav_links.keys())}, "
+          f"搜索={'有' if page.has_search else '无'}, "
+          f"记录={len(page.records)}条")
 
-# 获取待办处理页
-html = client.get_todo_processing()
+# BusinessPage 字段参考:
+#   page_type    — 页面标识: "mytodolists"/"do_list"/"my_todo_lists"/"my_up_lists"/"add"
+#   active_tab   — 当前激活的导航标签
+#   nav_links    — 标签名 → URL 映射
+#   records      — list[BusinessRecord] (无数据时为空)
+#   total_count  — GridView 总记录数 (0 = 无数据或不可见)
+#   has_search   — 是否有搜索框 (仅 business_DoList.aspx)
+#   raw_html     — 原始 HTML
 
-# 获取"我的待办"
-html = client.get_my_todo_lists()
+# 获取新建业务表单（只读查看表单结构）
+page = client.get_business_add_page()
+print(f"表单页面 {len(page.raw_html)} 字节")
 
-# 获取"我的更新"
-html = client.get_my_update_lists()
-
-# 获取新建业务表单
-html = client.get_business_add_page()
-
-# 提交新业务
-response = client.add_business({
+# 提交新业务（⚠️ 会创建真实业务工单，谨慎使用）
+# response = client.add_business({
     "field_name": "value",
     # ... 更多表单字段 ...
 })

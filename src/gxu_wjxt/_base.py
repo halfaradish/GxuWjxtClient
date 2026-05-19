@@ -6,7 +6,7 @@ from urllib.parse import quote, unquote, urljoin
 
 from bs4 import BeautifulSoup
 
-from .types import FileInfo, PaginationInfo, PhoneContact, DepartmentInfo
+from .types import FileInfo, PaginationInfo, PhoneContact, DepartmentInfo, BusinessPage, BusinessRecord
 
 
 def extract_viewstate(html: str) -> dict:
@@ -208,6 +208,59 @@ def parse_phone_list(html: str) -> list[PhoneContact]:
                     ))
 
     return contacts
+
+
+def parse_business_page(html: str, page_type: str) -> BusinessPage:
+    """解析业务办理页面
+
+    提取导航标签、激活状态、GridView 数据行（若有）、搜索表单字段。
+    当前测试账号无业务记录，GridView 在无数据时不可见。
+    """
+    page = BusinessPage(page_type=page_type, raw_html=html)
+
+    # 提取导航标签与激活状态
+    nav_links: dict[str, str] = {}
+    active_tab = ""
+    for m in re.finditer(
+        r'<a[^>]*href="(business_[^"]+\.aspx)"[^>]*>'
+        r'(?:<b>)?(?:<strong>)?([^<]*)(?:</strong>)?(?:</b>)?</a>',
+        html, re.I
+    ):
+        url, label = m.group(1), m.group(2).strip()
+        nav_links[label] = url
+
+    # 检测激活标签（被 <strong> 包裹的为当前页，可能嵌套 <b>）
+    active_m = re.search(
+        r'<a[^>]*href="([^"]*)"[^>]*>\s*(?:<b>)?<strong>([^<]*)</strong>(?:</b>)?\s*</a>',
+        html, re.I
+    )
+    if active_m:
+        active_tab = active_m.group(2).strip()
+    page.active_tab = active_tab
+    page.nav_links = nav_links
+
+    # 尝试提取 GridView 数据行 (gvList1)
+    soup = BeautifulSoup(html, "html.parser")
+    grid = soup.find("table", id="gvList1")
+    if grid:
+        for row in grid.find_all("tr"):
+            cells = row.find_all(["td", "th"])
+            cell_texts = [c.get_text(strip=True) for c in cells if c.get_text(strip=True)]
+            if cell_texts:
+                page.records.append(BusinessRecord(
+                    row_index=len(page.records),
+                    cells=cell_texts,
+                ))
+
+    # 提取记录总数（从 AspNetPager 或 VIEWSTATE 相关标记）
+    count_m = re.search(r"共(\d+)条", html)
+    if count_m:
+        page.total_count = int(count_m.group(1))
+
+    # 检测搜索框
+    page.has_search = "TextBox1" in html and "mysearch" in html
+
+    return page
 
 
 def parse_search_results(html: str, base_url: str) -> list[FileInfo]:
