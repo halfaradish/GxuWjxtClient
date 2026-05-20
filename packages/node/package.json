@@ -1,5 +1,5 @@
 {
-  "name": "@gxuwjxt/node",
+  "name": "gxu-wjxt",
   "version": "1.2.0",
   "description": "广西大学文件管理系统 Node.js/TypeScript SDK",
   "type": "module",

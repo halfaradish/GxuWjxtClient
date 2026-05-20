@@ -1,4 +1,4 @@
-# @gxuwjxt/node SDK 使用指南
+# gxu-wjxt SDK 使用指南
 
 > 广西大学文件管理系统 Node.js/TypeScript SDK 完整使用文档
 
@@ -36,11 +36,11 @@
 > **要求：** Node.js >= 18
 
 ```bash
-npm install @gxuwjxt/node
+npm install gxu-wjxt
 # or
-pnpm add @gxuwjxt/node
+pnpm add gxu-wjxt
 # or
-yarn add @gxuwjxt/node
+yarn add gxu-wjxt
 ```
 
 开发安装（从源码）：
@@ -63,7 +63,7 @@ SDK 提供三种配置方式，优先级为：**构造函数参数 > 环境变�
 ### 方式 A：构造函数传参（推荐）
 
 ```typescript
-import { WjxtClient, WjxtConfig } from '@gxuwjxt/node';
+import { WjxtClient, WjxtConfig } from 'gxu-wjxt';
 
 // 直接传参
 const client = new WjxtClient({
@@ -92,7 +92,7 @@ export WJXT_DOWNLOAD_DIR=./downloads            # 可选
 ```
 
 ```typescript
-import { WjxtConfig } from '@gxuwjxt/node';
+import { WjxtConfig } from 'gxu-wjxt';
 
 const config = WjxtConfig.fromEnv();
 const client = new WjxtClient({ config });
@@ -101,7 +101,7 @@ const client = new WjxtClient({ config });
 ### 方式 C：配置文件
 
 ```typescript
-import { WjxtConfig } from '@gxuwjxt/node';
+import { WjxtConfig } from 'gxu-wjxt';
 
 const config = WjxtConfig.fromFile('./config.json');
 const client = new WjxtClient({ config });
@@ -156,7 +156,7 @@ const prodConfig = config.mergeWith({ timeout: 60_000, retryCount: 5 });
 推荐使用 `using` 语法 (TypeScript 5.2+) 或手动管理，确保客户端正确关闭：
 
 ```typescript
-import { WjxtClient } from '@gxuwjxt/node';
+import { WjxtClient } from 'gxu-wjxt';
 
 // 方式 A: using 语法 (TS 5.2+)
 {
@@ -458,7 +458,7 @@ console.log(`表单页面 ${addPage.rawHtml.length} 字节`);
 ### 4.1 基本用法
 
 ```typescript
-import { WjxtClient, FileCrawler } from '@gxuwjxt/node';
+import { WjxtClient, FileCrawler } from 'gxu-wjxt';
 
 const client = new WjxtClient({ username: '学号', password: '密码' });
 await client.login();
@@ -678,7 +678,7 @@ interface CrawlStats {
 import {
   WjxtError, AuthError, NetworkError, ParseError,
   SessionExpiredError, DownloadError,
-} from '@gxuwjxt/node';
+} from 'gxu-wjxt';
 
 try {
   await client.login();

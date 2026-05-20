@@ -20,7 +20,7 @@
 | SDK | 版本文件 | 当前版本 |
 |-----|---------|---------|
 | Python `gxu-wjxt` | `packages/python/pyproject.toml` → `[project] version` | `1.2.0` |
-| Node.js `@gxuwjxt/node` | `packages/node/package.json` → `version` | `1.2.0` |
+| Node.js `gxu-wjxt` | `packages/node/package.json` → `version` | `1.2.0` |
 
 **发版前必须手动更新对应版本号。**
 
@@ -162,14 +162,14 @@ npm publish
 ### 3.4 验证 npm 安装
 
 ```bash
-npm install @gxuwjxt/node
-node -e "const { WjxtClient } = require('@gxuwjxt/node'); console.log('OK');"
+npm install gxu-wjxt
+node -e "const { WjxtClient } = require('gxu-wjxt'); console.log('OK');"
 ```
 
 TypeScript 项目中验证类型：
 
 ```typescript
-import type { FileInfo, SearchResult } from '@gxuwjxt/node';
+import type { FileInfo, SearchResult } from 'gxu-wjxt';
 ```
 
 ### 3.5 涉及文件
@@ -188,9 +188,9 @@ import type { FileInfo, SearchResult } from '@gxuwjxt/node';
 
 ```json
 "scripts": {
-  "build:node": "pnpm -r --filter @gxuwjxt/node build",
-  "test:node": "pnpm -r --filter @gxuwjxt/node test",
-  "publish:node": "pnpm -r --filter @gxuwjxt/node publish"
+  "build:node": "pnpm -r --filter gxu-wjxt build",
+  "test:node": "pnpm -r --filter gxu-wjxt test",
+  "publish:node": "pnpm -r --filter gxu-wjxt publish"
 }
 ```
 
@@ -244,7 +244,7 @@ import type { FileInfo, SearchResult } from '@gxuwjxt/node';
 | 步骤 | Python SDK | Node.js SDK |
 |------|-----------|-------------|
 | 注册表 | [PyPI](https://pypi.org) | [npm](https://npmjs.com) |
-| 包名 | `gxu-wjxt` | `@gxuwjxt/node` |
+| 包名 | `gxu-wjxt` | `gxu-wjxt` |
 | 构建命令 | `cd packages/python && python -m build` | `pnpm build:node` |
 | 发布命令 | `twine upload dist/*` | `npm publish`（在 packages/node/ 下） |
 | 测试发布 | TestPyPI | `npm publish --dry-run` |

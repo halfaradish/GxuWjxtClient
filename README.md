@@ -29,9 +29,9 @@ pip install -e packages/python/
 ### Node.js SDK
 
 ```bash
-npm install @gxuwjxt/node
+npm install gxu-wjxt
 # or
-pnpm add @gxuwjxt/node
+pnpm add gxu-wjxt
 ```
 
 > 详细使用指南见 **[packages/node/GUIDE.md](packages/node/GUIDE.md)**。
@@ -61,7 +61,7 @@ pnpm build:node
 │   │   ├── demo.py
 │   │   ├── config.example.json
 │   │   └── src/gxu_wjxt/       # 核心包（9个模块）
-│   └── node/                   # @gxuwjxt/node TypeScript SDK
+│   └── node/                   # gxu-wjxt TypeScript SDK
 │       ├── package.json
 │       ├── tsconfig.json
 │       └── src/                # 核心包（7个模块）
@@ -105,7 +105,7 @@ python packages/python/demo.py
 ### 3. Node.js 快速体验
 
 ```typescript
-import { WjxtClient } from '@gxuwjxt/node';
+import { WjxtClient } from 'gxu-wjxt';
 
 const client = new WjxtClient({ username: 'student_id', password: 'password' });
 await client.login();

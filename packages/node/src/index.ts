@@ -1,9 +1,9 @@
 /**
- * @gxuwjxt/node — 广西大学文件管理系统 Node.js/TypeScript SDK
+ * gxu-wjxt — 广西大学文件管理系统 Node.js/TypeScript SDK
  *
  * @example
  * ```typescript
- * import { WjxtClient } from '@gxuwjxt/node';
+ * import { WjxtClient } from 'gxu-wjxt';
  *
  * const client = new WjxtClient({ username: 'student_id', password: 'password' });
  * await client.login();
