@@ -112,6 +112,7 @@ export interface BusinessRecord {
  */
 export interface BusinessPage {
   pageType: string;
+  pageTitle: string;
   activeTab: string;
   navLinks: Record<string, string>;
   records: BusinessRecord[];
