@@ -16,7 +16,7 @@
 pip install gxu-wjxt
 ```
 
-> 详细使用指南见 **[docs/GUIDE.python.md](docs/GUIDE.python.md)**，包含所有 API 用法、数据类参考、最佳实践和完整示例。
+> 详细使用指南见 **[packages/python/GUIDE.md](packages/python/GUIDE.md)**，包含所有 API 用法、数据类参考、最佳实践和完整示例。
 
 开发安装：
 
@@ -34,7 +34,7 @@ npm install @gxuwjxt/node
 pnpm add @gxuwjxt/node
 ```
 
-> 详细使用指南见 **[docs/GUIDE.node.md](docs/GUIDE.node.md)**。
+> 详细使用指南见 **[packages/node/GUIDE.md](packages/node/GUIDE.md)**。
 
 开发安装：
 

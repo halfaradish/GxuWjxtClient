@@ -67,13 +67,13 @@ import { WjxtClient, WjxtConfig } from '@gxuwjxt/node';
 
 // 直接传参
 const client = new WjxtClient({
-  username: '2407110315',
+  username: 'your_student_id',
   password: 'your_password',
 });
 
 // 使用配置对象
 const config = new WjxtConfig({
-  username: '2407110315',
+  username: 'your_student_id',
   password: 'your_password',
   timeout: 60_000,        // 60 秒
   downloadDir: './my_downloads',
@@ -84,7 +84,7 @@ const client2 = new WjxtClient({ config });
 ### 方式 B：环境变量
 
 ```bash
-export WJXT_USERNAME=2407110315
+export WJXT_USERNAME=your_student_id
 export WJXT_PASSWORD=your_password
 export WJXT_BASE_URL=https://wjxt.gxu.edu.cn   # 可选
 export WJXT_MYTEIP=172.28.222.133--2            # 可选
@@ -111,7 +111,7 @@ const client = new WjxtClient({ config });
 
 ```json
 {
-  "username": "2407110315",
+  "username": "your_student_id",
   "password": "your_password",
   "base_url": "https://wjxt.gxu.edu.cn",
   "myteip": "172.28.222.133--2",

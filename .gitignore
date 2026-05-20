@@ -1,13 +1,14 @@
 config.json
 downloads/
+download_history.json
+**/dist
+
+# Python
 __pycache__/
 *.pyc
-download_history.json
 *.egg-info/
-/dist
 __test__/
 
 # Node.js
 node_modules/
-packages/node/dist/
 packages/node/*.tsbuildinfo

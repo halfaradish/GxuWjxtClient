@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "gxu-wjxt"
 version = "1.2.0"
 description = "广西大学文件管理系统 Python SDK"
-readme = "../../README.md"
+readme = "GUIDE.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"
 authors = [

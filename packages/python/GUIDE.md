@@ -61,11 +61,11 @@ SDK 提供三种配置方式，优先级为：**构造函数参数 > 环境变�
 from gxu_wjxt import WjxtClient, WjxtConfig
 
 # 直接传参
-client = WjxtClient(username="2407110315", password="your_password")
+client = WjxtClient(username="your_student_id", password="your_password")
 
 # 使用配置对象
 config = WjxtConfig(
-    username="2407110315",
+    username="your_student_id",
     password="your_password",
     timeout=60.0,
     download_dir="./my_downloads",
@@ -76,7 +76,7 @@ client = WjxtClient(config=config)
 ### 方式 B：环境变量
 
 ```bash
-export WJXT_USERNAME=2407110315
+export WJXT_USERNAME=your_student_id
 export WJXT_PASSWORD=your_password
 export WJXT_BASE_URL=https://wjxt.gxu.edu.cn   # 可选
 export WJXT_MYTEIP=172.28.222.133--2            # 可选
@@ -96,7 +96,7 @@ client = WjxtClient(config=config)
 
 ```json
 {
-    "username": "2407110315",
+    "username": "your_student_id",
     "password": "your_password",
     "base_url": "https://wjxt.gxu.edu.cn",
     "myteip": "172.28.222.133--2",
