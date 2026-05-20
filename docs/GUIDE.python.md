@@ -1,4 +1,4 @@
-# gxu-wjxt SDK 使用指南
+# gxu-wjxt Python SDK 使用指南
 
 > 广西大学文件管理系统 Python SDK 完整使用文档
 
@@ -44,7 +44,7 @@ pip install gxu-wjxt
 ```bash
 git clone https://github.com/halfaradish/GxuWjxtClient.git
 cd GxuWjxtClient
-pip install -e .
+pip install -e packages/python/
 ```
 
 **依赖：** Python 3.10+，httpx >= 0.27.0，beautifulsoup4 >= 4.12.0

@@ -1,4 +1,4 @@
-# gxu-wjxt — 广西大学文件管理系统 Python SDK
+# gxu-wjxt — 广西大学文件管理系统 SDK (Python / Node.js)
 
 [![GitHub](https://img.shields.io/badge/GitHub-仓库-238636?style=flat&logo=github&logoColor=fff&labelColor=000)](https://github.com/halfaradish/GxuWjxtClient) [![License](https://img.shields.io/github/license/halfaradish/GxuWjxtClient?style=flat)](https://github.com/halfaradish/GxuWjxtClient) [![Top Language](https://img.shields.io/github/languages/top/halfaradish/GxuWjxtClient?style=flat)](https://github.com/halfaradish/GxuWjxtClient) [![Last Commit](https://img.shields.io/github/last-commit/halfaradish/GxuWjxtClient?style=flat)](https://github.com/halfaradish/GxuWjxtClient)
 
@@ -6,22 +6,43 @@
 
 ---
 
-[wjxt.gxu.edu.cn](https://wjxt.gxu.edu.cn) 的 Python SDK，提供 API 封装、文件下载、数据解析，支持同步和异步。
+[wjxt.gxu.edu.cn](https://wjxt.gxu.edu.cn) 的多语言 SDK，提供 API 封装、文件下载、数据解析。支持 Python（同步 + 异步）和 Node.js/TypeScript。
 
 ## 安装
+
+### Python SDK
 
 ```bash
 pip install gxu-wjxt
 ```
 
-> 详细使用指南见 **[docs/GUIDE.md](https://github.com/halfaradish/GxuWjxtClient/blob/main/docs/GUIDE.md)**，包含所有 API 用法、数据类参考、最佳实践和完整示例。
+> 详细使用指南见 **[docs/GUIDE.python.md](docs/GUIDE.python.md)**，包含所有 API 用法、数据类参考、最佳实践和完整示例。
 
 开发安装：
 
 ```bash
 git clone https://github.com/halfaradish/GxuWjxtClient.git
 cd GxuWjxtClient
-pip install -e .
+pip install -e packages/python/
+```
+
+### Node.js SDK
+
+```bash
+npm install @gxuwjxt/node
+# or
+pnpm add @gxuwjxt/node
+```
+
+> 详细使用指南见 **[docs/GUIDE.node.md](docs/GUIDE.node.md)**。
+
+开发安装：
+
+```bash
+git clone https://github.com/halfaradish/GxuWjxtClient.git
+cd GxuWjxtClient
+pnpm install
+pnpm build:node
 ```
 
 ## 项目结构
@@ -46,25 +67,6 @@ pip install -e .
 │       └── src/                # 核心包（7个模块）
 ```
 
-## Node.js SDK
-
-```bash
-npm install @gxuwjxt/node
-# or
-pnpm add @gxuwjxt/node
-```
-
-```typescript
-import { WjxtClient } from '@gxuwjxt/node';
-
-const client = new WjxtClient({ username: 'student_id', password: 'password' });
-await client.login();
-
-for await (const file of client.iterFiles({ maxPages: 3 })) {
-  console.log(file.title);
-}
-```
-
 ## 快速开始
 
 ### 1. 配置凭证（三选一）
@@ -72,7 +74,7 @@ for await (const file of client.iterFiles({ maxPages: 3 })) {
 **方式 A — 配置文件：**
 
 ```bash
-cp config.example.json config.json
+cp packages/python/config.example.json packages/python/config.json
 # 编辑 config.json
 ```
 
@@ -97,12 +99,30 @@ client = WjxtClient(username="学号", password="密码")
 ### 2. 运行演示
 
 ```bash
-python demo.py
+python packages/python/demo.py
+```
+
+### 3. Node.js 快速体验
+
+```typescript
+import { WjxtClient } from '@gxuwjxt/node';
+
+const client = new WjxtClient({ username: 'student_id', password: 'password' });
+await client.login();
+
+// 遍历文件列表
+for await (const file of client.iterFiles({ maxPages: 3 })) {
+  console.log(`[${file.index}] ${file.department}: ${file.title}`);
+}
+
+// 搜索
+const result = await client.search({ keyword: '通知', fileYear: '2026' });
+console.log(`共 ${result.totalCount} 条，${result.totalPages} 页`);
 ```
 
 ## 使用方式
 
-### 同步客户端
+### Python 同步客户端
 
 ```python
 from gxu_wjxt import WjxtClient
@@ -272,7 +292,7 @@ downloads/
 
 ## API 覆盖
 
-共 19 个端点，覆盖认证、文件管理、搜索、用户、电话簿、业务办理。详见 [docs/api.md](https://github.com/halfaradish/GxuWjxtClient/blob/main/docs/api.md)。
+共 19 个端点，覆盖认证、文件管理、搜索、用户、电话簿、业务办理。Python 和 Node.js SDK 均覆盖全部端点。详见 [docs/api.md](docs/api.md)。
 
 | 模块 | 端点 |
 |------|------|
@@ -287,9 +307,17 @@ downloads/
 
 ## 依赖
 
+### Python SDK
+
 - Python 3.10+
 - [httpx](https://www.python-httpx.org/) — HTTP 客户端（同步+异步）
 - [beautifulsoup4](https://pypi.org/project/beautifulsoup4/) — HTML 解析
+
+### Node.js SDK
+
+- Node.js 18+
+- [cheerio](https://cheerio.js.org/) — HTML 解析（等价 bs4）
+- [iconv-lite](https://github.com/ashtuchkin/iconv-lite) — GB2312 编解码
 
 ## 注意事项
 
