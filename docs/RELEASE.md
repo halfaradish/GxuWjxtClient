@@ -146,7 +146,7 @@ npm publish --dry-run
 ```json
 "files": [
   "dist",
-  "GUIDE.md"
+  "README.md"
 ]
 ```
 
@@ -180,7 +180,7 @@ import type { FileInfo, SearchResult } from 'gxu-wjxt';
 | `packages/node/tsconfig.json` | TypeScript 编译配置 |
 | `packages/node/src/` | 源码（7 个模块） |
 | `packages/node/dist/` | 构建产物（被发布，被 gitignore） |
-| `packages/node/GUIDE.md` | 使用指南（随包发布） |
+| `packages/node/README.md` | 使用指南（随包发布） |
 
 ### 3.6 快捷脚本（可选）
 

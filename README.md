@@ -34,7 +34,7 @@ npm install gxu-wjxt
 pnpm add gxu-wjxt
 ```
 
-> 详细使用指南见 **[packages/node/GUIDE.md](packages/node/GUIDE.md)**。
+> 详细使用指南见 **[packages/node/README.md](packages/node/README.md)**。
 
 开发安装：
 
