@@ -1,0 +1,9 @@
+{
+  "name": "gxu-wjxt-monorepo",
+  "private": true,
+  "scripts": {
+    "build:node": "pnpm -r --filter @gxuwjxt/node build",
+    "test:node": "pnpm -r --filter @gxuwjxt/node test",
+    "dev:node": "pnpm -r --filter @gxuwjxt/node dev"
+  }
+}
