@@ -4,6 +4,16 @@
   "scripts": {
     "build:node": "pnpm -r --filter @gxuwjxt/node build",
     "test:node": "pnpm -r --filter @gxuwjxt/node test",
-    "dev:node": "pnpm -r --filter @gxuwjxt/node dev"
+    "dev:node": "pnpm -r --filter @gxuwjxt/node dev",
+    "pub:node": "cd packages/node && npm publish",
+    "pub:node:test": "cd packages/node && npm publish --access public --dry-run",
+
+    "build:python": "cd packages/python && python -m build",
+    "clean:python": "rm -rf packages/python/dist/*",
+    "pub:python": "cd packages/python && twine upload dist/*",
+    "pub:python:test": "cd packages/python && twine upload -r testpypi dist/*",
+    
+    "pub:all": "pnpm pub:node && pnpm pub:python",
+    "pub:all:test": "pnpm pub:node:test && pnpm pub:python:test"
   }
 }
