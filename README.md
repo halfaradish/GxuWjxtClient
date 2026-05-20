@@ -28,27 +28,41 @@ pip install -e .
 
 ```
 .
-├── src/                      # 源码主目录
-│   └── gxu_wjxt/             # 核心包模块
-│       ├── __init__.py        # 公开 API 导出、向后兼容 shim
-│       ├── client.py          # 同步客户端核心实现
-│       ├── async_client.py    # 异步客户端
-│       ├── crawler.py         # 批量下载爬虫
-│       ├── config.py          # 配置管理类
-│       ├── exceptions.py      # 自定义异常体系
-│       ├── types.py           # 数据模型/类型定义
-│       ├── _base.py           # 底层通用工具（内部使用）
-│       └── cli.py             # 命令行工具入口
-├── docs/                     # 完整文档目录
-│   ├── GUIDE.md              # 使用指南
-│   ├── api.md                # API 接口文档
-│   └── 中文API说明文档.md    # 中文详细说明
-├── dist/                     # 打包发布文件（whl/tar.gz）
-├── demo.py                   # 使用示例脚本
-├── pyproject.toml            # 项目打包 & 依赖配置
-├── config.example.json       # 配置文件模板（参考）
-├── config.json               # 本地实际配置文件
-└── README.md                 # 项目说明文档
+├── pnpm-workspace.yaml         # pnpm 工作空间配置
+├── package.json                # Monorepo 根配置
+├── README.md
+├── LICENSE
+├── docs/
+├── packages/
+│   ├── python/                 # gxu-wjxt Python SDK
+│   │   ├── pyproject.toml
+│   │   ├── Makefile
+│   │   ├── demo.py
+│   │   ├── config.example.json
+│   │   └── src/gxu_wjxt/       # 核心包（9个模块）
+│   └── node/                   # @gxuwjxt/node TypeScript SDK
+│       ├── package.json
+│       ├── tsconfig.json
+│       └── src/                # 核心包（7个模块）
+```
+
+## Node.js SDK
+
+```bash
+npm install @gxuwjxt/node
+# or
+pnpm add @gxuwjxt/node
+```
+
+```typescript
+import { WjxtClient } from '@gxuwjxt/node';
+
+const client = new WjxtClient({ username: 'student_id', password: 'password' });
+await client.login();
+
+for await (const file of client.iterFiles({ maxPages: 3 })) {
+  console.log(file.title);
+}
 ```
 
 ## 快速开始
